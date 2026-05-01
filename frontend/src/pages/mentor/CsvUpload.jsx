@@ -8,20 +8,87 @@ import {
   ChevronLeft,
   X,
   Database,
-  Columns
+  Columns,
+  Loader2
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import Papa from 'papaparse';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import StepIndicator from '../../components/ui/StepIndicator';
 import ProgressBar from '../../components/ui/ProgressBar';
+import { analyzeCsv, executeImport } from '../../lib/api';
+import toast from 'react-hot-toast';
 
 export const CsvUpload = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState(null);
+  const [csvData, setCsvData] = useState([]);
+  const [headers, setHeaders] = useState([]);
+  const [mapping, setMapping] = useState({
+    fullName: '',
+    usn: '',
+    department: '',
+    batchYear: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [importResult, setImportResult] = useState(null);
 
   const steps = ['Upload CSV', 'Map Columns', 'Validate Data', 'Import'];
+
+  const handleFileUpload = (f) => {
+    if (!f || !f.name.endsWith('.csv')) {
+      toast.error('Please upload a .csv file');
+      return;
+    }
+
+    setFile(f);
+    Papa.parse(f, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        setCsvData(results.data);
+        setHeaders(Object.keys(results.data[0] || {}));
+        
+        // AI Analysis
+        try {
+          setLoading(true);
+          const snippet = results.data.slice(0, 5).map(row => Object.values(row).join(',')).join('\n');
+          const { analysis } = await analyzeCsv(snippet);
+          
+          if (analysis && analysis.columnMapping) {
+            setMapping(prev => ({
+              ...prev,
+              ...analysis.columnMapping
+            }));
+            toast.success('AI has mapped your columns!');
+          }
+          setCurrentStep(1);
+        } catch (err) {
+          toast.error('AI Analysis failed, please map manually');
+          setCurrentStep(1);
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+  };
+
+  const handleExecuteImport = async () => {
+    try {
+      setLoading(true);
+      const res = await executeImport(file.name, csvData, mapping);
+      setImportResult(res);
+      setCurrentStep(3);
+      toast.success('Import completed!');
+    } catch (err) {
+      toast.error('Import failed');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -35,13 +102,7 @@ export const CsvUpload = () => {
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.name.endsWith('.csv')) {
-      setFile(droppedFile);
-      setCurrentStep(1);
-    } else {
-      alert('Please upload a .csv file');
-    }
+    handleFileUpload(e.dataTransfer.files[0]);
   };
 
   const renderStep = () => {
@@ -66,20 +127,14 @@ export const CsvUpload = () => {
                 type="file" 
                 accept=".csv" 
                 className="hidden" 
-                onChange={(e) => {
-                  const f = e.target.files[0];
-                  if (f) {
-                    setFile(f);
-                    setCurrentStep(1);
-                  }
-                }}
+                onChange={(e) => handleFileUpload(e.target.files[0])}
               />
               
               <div className={clsx(
                 'w-16 h-16 bg-surface-inset rounded-2xl flex items-center justify-center text-fg-tertiary transition-all duration-300 group-hover:scale-110 group-hover:text-accent shadow-inner',
-                isDragging && 'scale-110 text-accent'
+                (isDragging || loading) && 'scale-110 text-accent'
               )}>
-                <Upload size={32} strokeWidth={1.5} />
+                {loading ? <Loader2 size={32} className="animate-spin" /> : <Upload size={32} strokeWidth={1.5} />}
               </div>
               
               <div className="text-center">
@@ -125,18 +180,18 @@ export const CsvUpload = () => {
                   <thead>
                     <tr className="border-b border-border-subtle bg-surface-raised">
                       <th className="px-4 py-2 text-fg-tertiary uppercase">Row</th>
-                      <th className="px-4 py-2 text-fg-tertiary">Col 1</th>
-                      <th className="px-4 py-2 text-fg-tertiary">Col 2</th>
-                      <th className="px-4 py-2 text-fg-tertiary">Col 3</th>
+                      {headers.slice(0, 3).map(h => (
+                        <th key={h} className="px-4 py-2 text-fg-tertiary">{h}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-subtle">
-                    {[1, 2, 3].map(r => (
-                      <tr key={r}>
-                        <td className="px-4 py-2 text-fg-tertiary bg-surface/30">{r}</td>
-                        <td className="px-4 py-2 text-fg-secondary">Data {r}.1</td>
-                        <td className="px-4 py-2 text-fg-secondary">Data {r}.2</td>
-                        <td className="px-4 py-2 text-fg-secondary">Data {r}.3</td>
+                    {csvData.slice(0, 5).map((r, idx) => (
+                      <tr key={idx}>
+                        <td className="px-4 py-2 text-fg-tertiary bg-surface/30">{idx + 1}</td>
+                        {headers.slice(0, 3).map(h => (
+                          <td key={h} className="px-4 py-2 text-fg-secondary">{r[h]}</td>
+                        ))}
                       </tr>
                     ))}
                   </tbody>
@@ -156,14 +211,23 @@ export const CsvUpload = () => {
                 Map Fields
               </h4>
               <div className="space-y-4">
-                {['Full Name', 'USN / ID', 'Branch', 'Batch'].map(field => (
-                  <div key={field} className="flex flex-col gap-2">
-                    <label className="text-xs font-medium text-fg-secondary">{field}</label>
-                    <select className="bg-surface-inset border border-border-default rounded-md px-4 py-2 text-sm text-fg-primary outline-none focus:border-accent">
-                      <option>Select Column...</option>
-                      <option>Column 1</option>
-                      <option>Column 2</option>
-                      <option>IGNORE</option>
+                {[
+                  { label: 'Full Name', key: 'fullName' },
+                  { label: 'USN / ID', key: 'usn' },
+                  { label: 'Department', key: 'department' },
+                  { label: 'Batch Year', key: 'batchYear' }
+                ].map(field => (
+                  <div key={field.key} className="flex flex-col gap-2">
+                    <label className="text-xs font-medium text-fg-secondary">{field.label}</label>
+                    <select 
+                      className="bg-surface-inset border border-border-default rounded-md px-4 py-2 text-sm text-fg-primary outline-none focus:border-accent"
+                      value={mapping[field.key] || ''}
+                      onChange={(e) => setMapping({...mapping, [field.key]: e.target.value})}
+                    >
+                      <option value="">Select Column...</option>
+                      {headers.map(h => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
                     </select>
                   </div>
                 ))}
@@ -254,12 +318,9 @@ export const CsvUpload = () => {
                 <ChevronLeft size={18} />
                 Back to Mapping
               </Button>
-              <Button variant="primary" onClick={() => {
-                setCurrentStep(3);
-                // Simulate import process
-              }}>
-                Confirm & Import
-                <Database size={18} />
+              <Button variant="primary" disabled={loading} onClick={handleExecuteImport}>
+                {loading ? <Loader2 className="animate-spin" size={18} /> : <Database size={18} />}
+                {loading ? 'Importing...' : 'Confirm & Import'}
               </Button>
             </div>
           </div>
@@ -272,25 +333,31 @@ export const CsvUpload = () => {
               <CheckCircle size={48} strokeWidth={1.5} />
             </div>
             
-            <h3 className="text-3xl font-display font-bold text-fg-primary mb-2">Import Successful!</h3>
+            <h3 className="text-3xl font-display font-bold text-fg-primary mb-2">Import Complete!</h3>
             <p className="text-fg-secondary mb-8 text-center max-w-sm">
-              We've successfully imported <span className="text-fg-primary font-bold">24 students</span> into your cohort.
+              We've successfully processed <span className="text-fg-primary font-bold">{importResult?.importedRows || 0} students</span> into your cohort.
             </p>
 
             <Card className="w-full max-w-md bg-surface-inset border-success/20">
               <div className="space-y-4">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-fg-secondary">Import Duration</span>
-                  <span className="font-mono text-fg-primary">1.2s</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
                   <span className="text-fg-secondary">Records Processed</span>
-                  <span className="font-mono text-fg-primary">25</span>
+                  <span className="font-mono text-fg-primary">{importResult?.importedRows}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-fg-secondary">Failed Records</span>
-                  <span className="font-mono text-danger">1</span>
+                  <span className="text-fg-secondary">Failed/Skipped</span>
+                  <span className="font-mono text-danger">{importResult?.skippedRows}</span>
                 </div>
+                {importResult?.warnings?.length > 0 && (
+                  <div className="pt-2 border-t border-border-subtle">
+                    <p className="text-[10px] font-bold text-fg-tertiary uppercase mb-2">Warnings</p>
+                    <div className="max-h-24 overflow-y-auto space-y-1">
+                      {importResult.warnings.slice(0, 5).map((w, i) => (
+                        <p key={i} className="text-[10px] text-warning italic">{w}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </Card>
 

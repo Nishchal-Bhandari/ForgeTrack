@@ -14,6 +14,8 @@ function serializeUser(user) {
     name: user.displayName,
     student_id: user.studentId,
     student_usn: user.studentUsn,
+    profile_image: user.profileImage,
+    theme: user.theme,
     must_change_password: user.mustChangePassword,
     last_login_at: user.lastLoginAt,
   };
@@ -96,6 +98,29 @@ router.post('/change-password', requireAuth, async (req, res) => {
   user.mustChangePassword = false;
   await user.save();
 
+  return res.json({ user: serializeUser(user) });
+});
+
+// Update Profile (Name/Image)
+router.post('/update-profile', requireAuth, async (req, res) => {
+  const { displayName, profileImage } = req.body;
+  const user = req.auth.user;
+
+  if (displayName) user.displayName = displayName;
+  if (profileImage !== undefined) user.profileImage = profileImage;
+
+  await user.save();
+  return res.json({ user: serializeUser(user) });
+});
+
+// Update Settings (Theme)
+router.post('/update-settings', requireAuth, async (req, res) => {
+  const { theme } = req.body;
+  const user = req.auth.user;
+
+  if (theme) user.theme = theme;
+
+  await user.save();
   return res.json({ user: serializeUser(user) });
 });
 

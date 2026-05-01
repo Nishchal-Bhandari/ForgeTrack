@@ -39,3 +39,18 @@ export async function requireAuth(req, res, next) {
     return res.status(401).json({ error: 'Session expired or invalid.' });
   }
 }
+
+export function requireMentor(req, res, next) {
+  if (!req.auth || req.auth.user.role !== 'mentor') {
+    return res.status(403).json({ error: 'Forbidden. Mentor access required.' });
+  }
+  next();
+}
+
+export function requireStudent(req, res, next) {
+  if (!req.auth || req.auth.user.role !== 'student') {
+    return res.status(403).json({ error: 'Forbidden. Student access required.' });
+  }
+  next();
+}
+

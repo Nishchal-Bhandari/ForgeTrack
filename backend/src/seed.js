@@ -10,15 +10,24 @@ import { Material } from './models/Material.js';
 dotenv.config();
 
 export async function seed() {
+  console.log('Clearing existing data...');
+  await Promise.all([
+    User.deleteMany({}),
+    Student.deleteMany({}),
+    Session.deleteMany({}),
+    Attendance.deleteMany({}),
+    Material.deleteMany({}),
+  ]);
+
   const mentorPasswordHash = await bcrypt.hash('password123', 12);
   const studentPasswordHash = await bcrypt.hash('4SH24CS001', 12);
 
   const students = [
-    { name: 'Abhishek Sharma', usn: '4SH24CS001', email: 'abhishek@forge.local', branchCode: 'CS', batch: '2024-2028', admissionNumber: '24CS001', isActive: true },
-    { name: 'Divya Kulkarni', usn: '4SH24CS002', email: 'divya@forge.local', branchCode: 'AI', batch: '2024-2028', admissionNumber: '24AI002', isActive: true },
-    { name: 'Ravi Kumar', usn: '4SH24CS003', email: 'ravi@forge.local', branchCode: 'CS', batch: '2024-2028', admissionNumber: '24CS003', isActive: true },
-    { name: 'Anjali Desai', usn: '4SH24CS004', email: 'anjali@forge.local', branchCode: 'IS', batch: '2024-2028', admissionNumber: '24IS004', isActive: true },
-    { name: 'Karthik N', usn: '4SH24CS005', email: 'karthik@forge.local', branchCode: 'CS', batch: '2024-2028', admissionNumber: '24CS005', isActive: true },
+    { fullName: 'Abhishek Sharma', usn: '4SH24CS001', email: 'abhishek@forge.local', department: 'CS', batchYear: 2024, isActive: true },
+    { fullName: 'Divya Kulkarni', usn: '4SH24CS002', email: 'divya@forge.local', department: 'AI', batchYear: 2024, isActive: true },
+    { fullName: 'Ravi Kumar', usn: '4SH24CS003', email: 'ravi@forge.local', department: 'CS', batchYear: 2024, isActive: true },
+    { fullName: 'Anjali Desai', usn: '4SH24CS004', email: 'anjali@forge.local', department: 'IS', batchYear: 2024, isActive: true },
+    { fullName: 'Karthik N', usn: '4SH24CS005', email: 'karthik@forge.local', department: 'CS', batchYear: 2024, isActive: true },
   ];
 
   for (const student of students) {
@@ -104,7 +113,7 @@ export async function seed() {
         passwordHash: studentPasswordHash,
         role: 'student',
         displayName: 'Abhishek Sharma',
-        studentId: 1,
+        studentId: studentOne._id,
         studentUsn: '4SH24CS001',
         mustChangePassword: true,
       },
@@ -115,7 +124,12 @@ export async function seed() {
   console.log('Seeded ForgeTrack sample database records.');
 }
 
-if (process.argv[1] === import.meta.url) {
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+
+if (process.argv[1] === __filename || process.argv[1]?.endsWith('seed.js')) {
   await connectDatabase();
   seed().catch((error) => {
     console.error(error);

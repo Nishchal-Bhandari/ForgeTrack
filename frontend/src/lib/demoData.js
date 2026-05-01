@@ -1,6 +1,6 @@
 export const mentorDemo = {
   name: 'Nischay',
-  email: 'mentor@example.com',
+  email: 'mentor@forge.local',
   lastLogin: 'Apr 29, 2026',
 };
 

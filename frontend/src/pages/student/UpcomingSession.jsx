@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Calendar, 
   Clock, 
@@ -7,26 +7,73 @@ import {
   FileText, 
   MessageSquare,
   AlertCircle,
-  Bell
+  Bell,
+  Loader2
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Avatar from '../../components/ui/Avatar';
 import StatusPill from '../../components/ui/StatusPill';
+import { getUpcomingSession } from '../../lib/api';
+import toast from 'react-hot-toast';
 
 export const UpcomingSession = () => {
-  const session = {
-    date: "Thursday, April 30, 2026",
-    time: "2:30 PM - 4:00 PM",
-    topic: "Advanced TypeScript Patterns",
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSession = async () => {
+      try {
+        const res = await getUpcomingSession();
+        setSession(res.session);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSession();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="h-[60vh] flex items-center justify-center">
+        <Loader2 className="animate-spin text-accent" size={40} />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="max-w-4xl mx-auto py-12">
+        <Card className="text-center py-16">
+          <Calendar size={48} className="mx-auto text-fg-tertiary mb-4 opacity-20" />
+          <h3 className="text-2xl font-bold text-fg-primary mb-2">No Upcoming Sessions</h3>
+          <p className="text-fg-secondary">All caught up! Check back later for your next scheduled workshop.</p>
+        </Card>
+      </div>
+    );
+  }
+
+  const formattedDate = new Date(session.date).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  const displayData = {
+    date: formattedDate,
+    time: "2:30 PM - 4:00 PM", // Mocked time as it's not in the model yet
+    topic: session.topic,
     mentor: "Nischay",
     type: "Live Workshop",
     location: "Zoom Video Conference",
-    description: "Deep dive into TypeScript Generics, Conditional Types, and Mapped Types. We will be building a typesafe API client from scratch.",
+    description: "Prepare for today's session on " + session.topic + ". Ensure you have your environment ready.",
     prep: [
-      "Review previous session on Basic TypeScript",
-      "Install latest version of TypeScript (v5.0+)",
-      "Clone the repository: github.com/forgetrack/ts-workshop"
+      "Review materials from previous sessions",
+      "Ensure stable internet connection",
+      "Join 5 minutes early"
     ]
   };
 
@@ -42,37 +89,37 @@ export const UpcomingSession = () => {
           <div className="space-y-6 flex-1">
             <div className="flex items-center gap-3">
               <StatusPill status="info" />
-              <span className="text-sm font-mono text-fg-tertiary">{session.date}</span>
+              <span className="text-sm font-mono text-fg-tertiary">{displayData.date}</span>
             </div>
-
+ 
             <h1 className="text-4xl font-display font-bold text-fg-primary leading-tight">
-              {session.topic}
+              {displayData.topic}
             </h1>
-
+ 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center gap-3 text-fg-secondary">
                 <Clock size={20} className="text-accent" />
-                <span className="text-sm">{session.time}</span>
+                <span className="text-sm">{displayData.time}</span>
               </div>
               <div className="flex items-center gap-3 text-fg-secondary">
                 <MapPin size={20} className="text-accent" />
-                <span className="text-sm">{session.location}</span>
+                <span className="text-sm">{displayData.location}</span>
               </div>
             </div>
-
+ 
             <div className="p-6 rounded-2xl bg-surface-inset border border-border-subtle">
               <h4 className="text-xs font-bold text-fg-secondary uppercase tracking-widest mb-3">Description</h4>
               <p className="text-sm text-fg-primary leading-relaxed">
-                {session.description}
+                {displayData.description}
               </p>
             </div>
           </div>
-
+ 
           <div className="md:w-64 space-y-6">
             <div className="p-6 rounded-2xl bg-surface-raised border border-border-subtle flex flex-col items-center text-center">
               <span className="text-[10px] font-bold text-fg-tertiary uppercase tracking-widest mb-4">Your Mentor</span>
-              <Avatar name={session.mentor} size="lg" className="mb-3" />
-              <h4 className="font-bold text-fg-primary">{session.mentor}</h4>
+              <Avatar name={displayData.mentor} size="lg" className="mb-3" />
+              <h4 className="font-bold text-fg-primary">{displayData.mentor}</h4>
               <p className="text-xs text-fg-secondary">Lead Instructor</p>
               <button className="mt-4 text-accent text-xs font-bold uppercase tracking-widest hover:underline flex items-center gap-2">
                 <MessageSquare size={14} />
@@ -91,7 +138,7 @@ export const UpcomingSession = () => {
           </div>
         </div>
       </Card>
-
+ 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <h4 className="text-xs font-bold text-fg-secondary uppercase tracking-widest mb-6 flex items-center gap-2">
@@ -99,7 +146,7 @@ export const UpcomingSession = () => {
             Preparation Required
           </h4>
           <ul className="space-y-4">
-            {session.prep.map((item, idx) => (
+            {displayData.prep.map((item, idx) => (
               <li key={idx} className="flex gap-3 text-sm text-fg-secondary leading-normal">
                 <div className="w-5 h-5 rounded-full bg-surface-inset border border-border-subtle flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-bold">
                   {idx + 1}

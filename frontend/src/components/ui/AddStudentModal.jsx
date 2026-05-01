@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { X, AlertCircle } from 'lucide-react';
-import { Button } from './Button';
-import { Input } from './Input';
-import { Modal } from './Modal';
+import { X, AlertCircle, User, GraduationCap, ShieldCheck, Phone, Mail, Hash, BookOpen, Calendar as CalendarIcon } from 'lucide-react';
+import Button from './Button';
+import Input from './Input';
+import Modal from './Modal';
 import { addStudent } from '../../lib/api';
-import { showToast } from '../../utils/cursorAnimation';
+import toast from 'react-hot-toast';
 
 export function AddStudentModal({ isOpen, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
@@ -17,7 +17,6 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }) {
     department: 'CS',
     phone: '',
     batchYear: new Date().getFullYear(),
-    username: '',
     password: '',
     confirmPassword: '',
   });
@@ -30,7 +29,6 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }) {
       ...prev,
       [name]: value,
     }));
-    // Clear field error when user starts typing
     if (fieldErrors[name]) {
       setFieldErrors((prev) => ({
         ...prev,
@@ -41,7 +39,6 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }) {
 
   const validate = () => {
     const errors = {};
-
     if (!formData.fullName.trim()) errors.fullName = 'Full name is required';
     if (!formData.usn.trim()) errors.usn = 'USN is required';
     if (!formData.email.trim()) errors.email = 'Email is required';
@@ -59,25 +56,23 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-
     if (!validate()) return;
 
     setLoading(true);
     try {
+      // Ensure batchYear is a valid number before sending
+      const parsedBatchYear = parseInt(formData.batchYear);
+      if (isNaN(parsedBatchYear)) {
+        throw new Error('Invalid batch year format');
+      }
+
       await addStudent({
-        fullName: formData.fullName,
-        usn: formData.usn,
-        email: formData.email,
-        department: formData.department,
-        phone: formData.phone || null,
-        batchYear: parseInt(formData.batchYear),
-        password: formData.password,
-        confirmPassword: formData.confirmPassword,
+        ...formData,
+        batchYear: parsedBatchYear,
       });
 
-      showToast('Student added successfully', 'success');
-
-      // Reset form
+      toast.success('Student enrolled successfully!');
+      
       setFormData({
         fullName: '',
         usn: '',
@@ -92,158 +87,158 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }) {
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      if (err.message.includes('field')) {
-        const match = err.message.match(/field: (\w+)/);
-        if (match) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            [match[1]]: err.message,
-          }));
-        }
-      } else {
-        setError(err.message);
-      }
+      setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="w-full max-w-md">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-            Add New Student
-          </h2>
-          <button
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title="Enroll New Student"
+      className="max-w-2xl"
+      footer={
+        <div className="flex gap-3 w-full sm:w-auto">
+          <Button
+            type="button"
+            variant="secondary"
             onClick={onClose}
-            className="p-1 hover:bg-opacity-10 rounded"
-            style={{ color: 'var(--text-secondary)' }}
+            className="flex-1 sm:flex-none px-6"
+            disabled={loading}
           >
-            <X size={20} />
-          </button>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="enroll-student-form"
+            variant="primary"
+            className="flex-1 sm:flex-none min-w-[160px] shadow-lg shadow-accent/20"
+            loading={loading}
+          >
+            Confirm Enrollment
+          </Button>
         </div>
-
+      }
+    >
+      <div className="max-h-[65vh] overflow-y-auto pr-4 -mr-2 custom-scrollbar">
         {error && (
-          <div className="mb-4 p-3 rounded-lg flex gap-2 items-start" style={{
-            backgroundColor: 'rgba(244, 63, 94, 0.1)',
-            borderColor: 'rgba(244, 63, 94, 0.3)',
-            border: '1px solid',
-          }}>
-            <AlertCircle size={18} style={{ color: '#F43F5E', marginTop: '2px', flexShrink: 0 }} />
-            <p className="text-sm" style={{ color: '#F43F5E' }}>{error}</p>
+          <div className="mb-6 p-4 rounded-xl flex gap-3 items-start bg-danger/10 border border-danger/20 animate-shake">
+            <AlertCircle size={18} className="text-danger shrink-0 mt-0.5" />
+            <p className="text-sm text-danger leading-relaxed">{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Full Name"
-            name="fullName"
-            value={formData.fullName}
-            onChange={handleChange}
-            error={fieldErrors.fullName}
-            placeholder="e.g., John Doe"
-          />
-
-          <Input
-            label="USN"
-            name="usn"
-            value={formData.usn}
-            onChange={handleChange}
-            error={fieldErrors.usn}
-            placeholder="e.g., 4SH24CS001"
-          />
-
-          <Input
-            label="Email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            error={fieldErrors.email}
-            placeholder="e.g., student@forge.local"
-          />
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-                Department
-              </label>
-              <select
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                className="w-full px-3 py-2 rounded-lg border"
-                style={{
-                  backgroundColor: '#1A1A25',
-                  borderColor: 'rgba(255,255,255,0.08)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                {departments.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
+        <form id="enroll-student-form" onSubmit={handleSubmit} className="space-y-8 pb-4">
+          {/* Section: Personal */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-accent">
+              <User size={16} />
+              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em]">Personal Information</h4>
             </div>
-
-            <Input
-              label="Batch Year"
-              name="batchYear"
-              type="number"
-              value={formData.batchYear}
-              onChange={handleChange}
-              error={fieldErrors.batchYear}
-            />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Full Name"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                error={fieldErrors.fullName}
+                placeholder="e.g., John Doe"
+              />
+              <Input
+                label="Email Address"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                error={fieldErrors.email}
+                placeholder="student@forge.local"
+              />
+              <Input
+                label="Phone Number"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="+91 98765 43210"
+              />
+            </div>
           </div>
 
-          <Input
-            label="Phone (Optional)"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            placeholder="e.g., 9876543210"
-          />
+          {/* Section: Academic */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-accent">
+              <GraduationCap size={16} />
+              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em]">Academic Credentials</h4>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-1">
+                <Input
+                  label="USN / ID"
+                  name="usn"
+                  value={formData.usn}
+                  onChange={handleChange}
+                  error={fieldErrors.usn}
+                  placeholder="4SH24CS001"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-fg-secondary uppercase tracking-wider ml-1">
+                  Department
+                </label>
+                <select
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  className="w-full bg-surface-inset border border-border-default rounded-xl px-4 py-3 text-sm text-fg-primary outline-none focus:border-accent transition-all appearance-none cursor-pointer hover:border-border-strong"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '16px' }}
+                >
+                  {departments.map((dept) => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+              </div>
+              <Input
+                label="Batch Year"
+                name="batchYear"
+                type="number"
+                value={formData.batchYear}
+                onChange={handleChange}
+                error={fieldErrors.batchYear}
+              />
+            </div>
+          </div>
 
-          <Input
-            label="Password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            error={fieldErrors.password}
-            placeholder="Min 6 characters"
-          />
-
-          <Input
-            label="Confirm Password"
-            name="confirmPassword"
-            type="password"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            error={fieldErrors.confirmPassword}
-            placeholder="Re-enter password"
-          />
-
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              className="flex-1"
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              className="flex-1"
-              loading={loading}
-            >
-              Add Student
-            </Button>
+          {/* Section: Security */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-accent">
+              <ShieldCheck size={16} />
+              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em]">Account Security</h4>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Temporary Password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                error={fieldErrors.password}
+                placeholder="••••••••"
+              />
+              <Input
+                label="Confirm Password"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                error={fieldErrors.confirmPassword}
+                placeholder="••••••••"
+              />
+            </div>
           </div>
         </form>
       </div>

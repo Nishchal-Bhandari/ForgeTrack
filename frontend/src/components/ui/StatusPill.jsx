@@ -1,8 +1,25 @@
 import React from 'react';
-import { clsx } from 'clsx';
+import clsx from 'clsx';
 import { Check, X, AlertTriangle, Info } from 'lucide-react';
 
-export const StatusPill = ({ status = 'info', className }) => {
+export const StatusPill = ({ status = 'info', className, label }) => {
+  const map = (s) => {
+    if (!s && s !== 0) return 'info';
+    const raw = String(s).toLowerCase();
+    const synonyms = {
+      success: 'present',
+      danger: 'absent',
+      present: 'present',
+      absent: 'absent',
+      warn: 'warning',
+      warning: 'warning',
+      info: 'info',
+    };
+    return synonyms[raw] ?? 'info';
+  };
+
+  const key = map(status);
+
   const styles = {
     present: 'bg-success/20 text-success border-success/30',
     absent: 'bg-danger/20 text-danger border-danger/30',
@@ -17,18 +34,18 @@ export const StatusPill = ({ status = 'info', className }) => {
     info: Info,
   };
 
-  const Icon = icons[status];
+  const Icon = icons[key] ?? Info;
 
   return (
     <span
       className={clsx(
         'rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-widest inline-flex items-center gap-1.5 border',
-        styles[status],
+        styles[key],
         className
       )}
     >
-      <Icon size={12} strokeWidth={2.5} />
-      {status}
+      {Icon ? <Icon size={12} strokeWidth={2.5} /> : null}
+      {label ?? key}
     </span>
   );
 };

@@ -3,6 +3,8 @@ import { Student } from '../models/Student.js';
 import { Attendance } from '../models/Attendance.js';
 import { Session } from '../models/Session.js';
 import { User } from '../models/User.js';
+import { Material } from '../models/Material.js';
+import { Notification } from '../models/Notification.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -127,37 +129,22 @@ router.get('/attendance-history', requireAuth, ensureStudent, async (req, res) =
   }
 });
 
-// GET /api/student/heatmap - Get 6-month attendance heatmap data
-router.get('/heatmap', requireAuth, ensureStudent, async (req, res) => {
+// GET /api/student/upcoming-session - Get next scheduled session
+router.get('/upcoming-session', requireAuth, ensureStudent, async (req, res) => {
   try {
-    const student = await Student.findOne({ authUserId: req.auth.user._id });
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
 
-    if (!student) {
-      return res.status(404).json({ error: 'Student record not found' });
-    }
+    const upcoming = await Session.findOne({ date: { $gte: today } })
+      .sort({ date: 1 });
 
-    // Get last 6 months of data
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-    const attendance = await Attendance.find({
-      studentId: student._id,
-      markedAt: { $gte: sixMonthsAgo },
-    }).populate('sessionId', 'date');
-
-    // Group by date
-    const heatmapData = {};
-    attendance.forEach((record) => {
-      const dateStr = new Date(record.sessionId.date).toISOString().split('T')[0];
-      heatmapData[dateStr] = record.status === 'present' ? 'present' : 'absent';
-    });
-
-    return res.json({ heatmap: heatmapData });
+    return res.json({ session: upcoming });
   } catch (error) {
-    console.error('Error fetching heatmap:', error);
-    return res.status(500).json({ error: 'Failed to fetch heatmap' });
+    console.error('Error fetching upcoming session:', error);
+    return res.status(500).json({ error: 'Failed to fetch upcoming session' });
   }
 });
+
 
 // PUT /api/student/profile - Update student phone and profile info
 router.put('/profile', requireAuth, ensureStudent, async (req, res) => {
@@ -187,4 +174,57 @@ router.put('/profile', requireAuth, ensureStudent, async (req, res) => {
   }
 });
 
+// GET /api/student/materials - Get all materials
+router.get('/materials', requireAuth, ensureStudent, async (req, res) => {
+  try {
+    const materials = await Material.find().populate('sessionId', 'topic date');
+    return res.json({ materials });
+  } catch (error) {
+    console.error('Error fetching materials:', error);
+    return res.status(500).json({ error: 'Failed to fetch materials' });
+  }
+});
+
+// GET /api/student/notifications - Get student's notifications
+router.get('/notifications', requireAuth, ensureStudent, async (req, res) => {
+  try {
+    const notifications = await Notification.find({ userId: req.auth.user._id })
+      .sort({ createdAt: -1 })
+      .limit(50);
+    return res.json({ notifications });
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    return res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+// POST /api/student/notifications/:id/read - Mark notification as read
+router.post('/notifications/:id/read', requireAuth, ensureStudent, async (req, res) => {
+  try {
+    await Notification.findOneAndUpdate(
+      { _id: req.params.id, userId: req.auth.user._id },
+      { isRead: true }
+    );
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    return res.status(500).json({ error: 'Failed to mark notification as read' });
+  }
+});
+
+// POST /api/student/notifications/read-all - Mark all as read
+router.post('/notifications/read-all', requireAuth, ensureStudent, async (req, res) => {
+  try {
+    await Notification.updateMany(
+      { userId: req.auth.user._id, isRead: false },
+      { isRead: true }
+    );
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    return res.status(500).json({ error: 'Failed to mark notifications as read' });
+  }
+});
+
 export default router;
+

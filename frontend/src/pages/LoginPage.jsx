@@ -151,7 +151,7 @@ export const LoginPage = () => {
               Demo Credentials
             </p>
             <p className="text-[11px] mt-1" style={{ color: 'var(--text-secondary)' }}>
-              {role === 'mentor' ? 'mentor@theboringpeople.in' : '4sh24cs001@forge.local'} / {role === 'mentor' ? 'password123' : '4SH24CS001'}
+              {role === 'mentor' ? 'mentor@forge.local' : 'student@forge.local'} / {role === 'mentor' ? 'password123' : '4SH24CS001'}
             </p>
           </div>
         </Card>
