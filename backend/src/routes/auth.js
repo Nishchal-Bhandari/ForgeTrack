@@ -40,6 +40,7 @@ function signToken(user) {
 }
 
 router.post('/login', async (req, res) => {
+  console.log('LOGIN REQUEST RECEIVED:', req.body?.identifier);
   const { role, identifier, password } = req.body ?? {};
 
   if (!role || !identifier || !password) {

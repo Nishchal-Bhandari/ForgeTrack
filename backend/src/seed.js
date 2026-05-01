@@ -9,9 +9,7 @@ import { Material } from './models/Material.js';
 
 dotenv.config();
 
-async function seed() {
-  await connectDatabase();
-
+export async function seed() {
   const mentorPasswordHash = await bcrypt.hash('password123', 12);
   const studentPasswordHash = await bcrypt.hash('4SH24CS001', 12);
 
@@ -117,7 +115,10 @@ async function seed() {
   console.log('Seeded ForgeTrack sample database records.');
 }
 
-seed().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (process.argv[1] === import.meta.url) {
+  await connectDatabase();
+  seed().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

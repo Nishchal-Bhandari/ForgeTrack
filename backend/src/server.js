@@ -63,12 +63,30 @@ app.get('/api/db-status', async (_req, res) => {
   });
 });
 
+import { seed } from './seed.js';
+
+app.use('/api/admin/seed', async (req, res) => {
+  try {
+    await seed();
+    res.json({ ok: true, message: 'Database seeded successfully' });
+  } catch (error) {
+    console.error('SEED ERROR:', error);
+    res.status(500).json({ error: 'Seed failed', message: error.message });
+  }
+});
+
 app.use('/api/auth', authRouter);
 app.use('/api/mentor', mentorRouter);
 app.use('/api/student', studentRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Not found.' });
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('SERVER ERROR:', err.stack);
+  res.status(500).json({ error: 'Internal Server Error', message: err.message });
 });
 
 async function start() {
