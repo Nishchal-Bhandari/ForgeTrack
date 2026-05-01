@@ -75,6 +75,11 @@ VITE_API_URL=https://api.yourdomain.com/api
 npm install && npm run dev:all
 ```
 
+### 👤 Test Credentials (Post-Seed)
+Once the database is seeded, use these accounts to verify RBAC:
+*   **Mentor Account:** `mentor@forge.local` / `password123`
+*   **Student Account:** `student@forge.local` / `4SH24CS001`
+
 ---
 
 ## 🛠️ Build & Release Pipeline

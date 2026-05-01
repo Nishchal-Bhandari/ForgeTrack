@@ -81,13 +81,13 @@ export async function seed() {
   );
 
   await User.updateOne(
-    { email: 'mentor@theboringpeople.in' },
+    { email: 'mentor@forge.local' },
     {
       $set: {
-        email: 'mentor@theboringpeople.in',
+        email: 'mentor@forge.local',
         passwordHash: mentorPasswordHash,
         role: 'mentor',
-        displayName: 'Nischay',
+        displayName: 'Nischay (Lead Mentor)',
         studentId: null,
         studentUsn: null,
         mustChangePassword: false,
@@ -97,10 +97,10 @@ export async function seed() {
   );
 
   await User.updateOne(
-    { email: '4sh24cs001@forge.local' },
+    { email: 'student@forge.local' },
     {
       $set: {
-        email: '4sh24cs001@forge.local',
+        email: 'student@forge.local',
         passwordHash: studentPasswordHash,
         role: 'student',
         displayName: 'Abhishek Sharma',
