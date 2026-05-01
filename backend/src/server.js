@@ -19,6 +19,11 @@ const clientOrigin = process.env.CLIENT_ORIGIN;
 const defaultOrigins = ['http://localhost:5174', 'http://127.0.0.1:5174', 'http://localhost:5175', 'http://127.0.0.1:5175', 'http://localhost:5176', 'http://127.0.0.1:5176'];
 const allowedOrigins = clientOrigin ? clientOrigin.split(',').map((v) => v.trim()) : defaultOrigins;
 
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
 app.use(
   cors({
     origin: true,  // Allow all origins temporarily for testing
