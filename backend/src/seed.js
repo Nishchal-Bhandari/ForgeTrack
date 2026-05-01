@@ -43,19 +43,35 @@ export async function seed() {
     );
   }
 
+  const mentor = await User.findOneAndUpdate(
+    { email: 'mentor@forge.local' },
+    {
+      $set: {
+        email: 'mentor@forge.local',
+        passwordHash: mentorPasswordHash,
+        role: 'mentor',
+        displayName: 'Nischay (Lead Mentor)',
+        studentId: null,
+        studentUsn: null,
+        mustChangePassword: false,
+      },
+    },
+    { upsert: true, new: true }
+  );
+
   const [studentOne, studentTwo, studentThree] = await Student.find({ usn: { $in: ['4SH24CS001', '4SH24CS002', '4SH24CS003'] } }).sort({ usn: 1 });
   const [sessionOne, sessionTwo, sessionThree] = await Session.find().sort({ date: 1 });
 
   const attendanceRows = [
-    { studentId: studentOne._id, sessionId: sessionOne._id, present: true, markedBy: 'csv_import', importLabel: 'sample_seed' },
-    { studentId: studentTwo._id, sessionId: sessionOne._id, present: true, markedBy: 'csv_import', importLabel: 'sample_seed' },
-    { studentId: studentThree._id, sessionId: sessionOne._id, present: false, markedBy: 'csv_import', importLabel: 'sample_seed' },
-    { studentId: studentOne._id, sessionId: sessionTwo._id, present: true, markedBy: 'csv_import', importLabel: 'sample_seed' },
-    { studentId: studentTwo._id, sessionId: sessionTwo._id, present: false, markedBy: 'csv_import', importLabel: 'sample_seed' },
-    { studentId: studentThree._id, sessionId: sessionTwo._id, present: true, markedBy: 'csv_import', importLabel: 'sample_seed' },
-    { studentId: studentOne._id, sessionId: sessionThree._id, present: false, markedBy: 'csv_import', importLabel: 'sample_seed' },
-    { studentId: studentTwo._id, sessionId: sessionThree._id, present: true, markedBy: 'csv_import', importLabel: 'sample_seed' },
-    { studentId: studentThree._id, sessionId: sessionThree._id, present: true, markedBy: 'csv_import', importLabel: 'sample_seed' },
+    { studentId: studentOne._id, sessionId: sessionOne._id, status: 'present', markedBy: mentor._id, importLabel: 'sample_seed' },
+    { studentId: studentTwo._id, sessionId: sessionOne._id, status: 'present', markedBy: mentor._id, importLabel: 'sample_seed' },
+    { studentId: studentThree._id, sessionId: sessionOne._id, status: 'absent', markedBy: mentor._id, importLabel: 'sample_seed' },
+    { studentId: studentOne._id, sessionId: sessionTwo._id, status: 'present', markedBy: mentor._id, importLabel: 'sample_seed' },
+    { studentId: studentTwo._id, sessionId: sessionTwo._id, status: 'absent', markedBy: mentor._id, importLabel: 'sample_seed' },
+    { studentId: studentThree._id, sessionId: sessionTwo._id, status: 'present', markedBy: mentor._id, importLabel: 'sample_seed' },
+    { studentId: studentOne._id, sessionId: sessionThree._id, status: 'absent', markedBy: mentor._id, importLabel: 'sample_seed' },
+    { studentId: studentTwo._id, sessionId: sessionThree._id, status: 'present', markedBy: mentor._id, importLabel: 'sample_seed' },
+    { studentId: studentThree._id, sessionId: sessionThree._id, status: 'present', markedBy: mentor._id, importLabel: 'sample_seed' },
   ];
 
   for (const row of attendanceRows) {
@@ -75,22 +91,6 @@ export async function seed() {
         type: 'slides',
         url: 'https://example.com/deployment-strategies-slides',
         description: 'Sample placeholder material',
-      },
-    },
-    { upsert: true }
-  );
-
-  await User.updateOne(
-    { email: 'mentor@forge.local' },
-    {
-      $set: {
-        email: 'mentor@forge.local',
-        passwordHash: mentorPasswordHash,
-        role: 'mentor',
-        displayName: 'Nischay (Lead Mentor)',
-        studentId: null,
-        studentUsn: null,
-        mustChangePassword: false,
       },
     },
     { upsert: true }
