@@ -121,7 +121,7 @@ export const StudentAttendance = () => {
                     {new Date(session.date).toLocaleDateString()}
                   </td>
                   <td className="px-8 py-4 text-sm font-semibold text-fg-primary">{session.topic}</td>
-                  <td className="px-8 py-4 text-sm text-fg-secondary">Mentor</td>
+                  <td className="px-8 py-4 text-sm text-fg-secondary">{session.mentorName || 'Mentor'}</td>
                   <td className="px-8 py-4">
                     <StatusPill status={session.status} />
                   </td>

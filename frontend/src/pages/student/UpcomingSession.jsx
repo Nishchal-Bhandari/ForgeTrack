@@ -63,12 +63,14 @@ export const UpcomingSession = () => {
 
   const displayData = {
     date: formattedDate,
-    time: "2:30 PM - 4:00 PM", // Mocked time as it's not in the model yet
+    time: session.startTime && session.endTime 
+      ? `${session.startTime} - ${session.endTime}` 
+      : "Time TBD",
     topic: session.topic,
-    mentor: "Nischay",
-    type: "Live Workshop",
-    location: "Zoom Video Conference",
-    description: "Prepare for today's session on " + session.topic + ". Ensure you have your environment ready.",
+    mentor: session.mentorId?.displayName || "Your Mentor",
+    type: session.sessionType || "Live Workshop",
+    location: session.meetingLink || session.location || "TBD",
+    description: session.notes || `Prepare for today's session on ${session.topic}. Ensure you have your environment ready.`,
     prep: [
       "Review materials from previous sessions",
       "Ensure stable internet connection",

@@ -12,7 +12,9 @@ import {
   LogOut,
   X,
   BarChart2,
-  Calendar
+  Calendar,
+  MessageSquare,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Avatar from '../ui/Avatar';
@@ -42,6 +44,8 @@ export const Sidebar = ({ isOpen, onClose }) => {
   ];
 
   const commonLinks = [
+    { name: 'Messages', icon: MessageSquare, path: '/messages' },
+    { name: 'Announcements', icon: Bell, path: '/announcements' },
     { name: 'Settings', icon: SettingsIcon, path: '/settings' },
   ];
 

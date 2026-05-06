@@ -4,6 +4,8 @@ export async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const token = localStorage.getItem('forgetrack_token');
   
+  console.log(`API Request: ${options.method || 'GET'} ${url}`, { token: !!token });
+  
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -26,6 +28,7 @@ export async function apiRequest(endpoint, options = {}) {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: response.statusText }));
+    console.error(`API Error ${response.status}:`, error);
     throw new Error(error.error || error.message || 'API request failed');
   }
 
@@ -192,4 +195,97 @@ export async function markNotificationRead(id) {
 
 export async function markAllNotificationsRead() {
   return apiRequest('/student/notifications/read-all', { method: 'POST' });
+}
+
+// MESSAGING ENDPOINTS
+export async function getConversations() {
+  return apiRequest('/messages/conversations');
+}
+
+export async function getMessages(conversationId, page = 1, limit = 50) {
+  const params = new URLSearchParams({ page, limit });
+  return apiRequest(`/messages/conversations/${conversationId}?${params.toString()}`);
+}
+
+export async function sendMessage(conversationId, content, attachmentUrl = null) {
+  return apiRequest(`/messages/conversations/${conversationId}`, {
+    method: 'POST',
+    body: JSON.stringify({ content, attachmentUrl }),
+  });
+}
+
+export async function markMessageAsRead(conversationId, messageId) {
+  return apiRequest(`/messages/conversations/${conversationId}/${messageId}/read`, {
+    method: 'POST',
+  });
+}
+
+export async function markConversationAsRead(conversationId) {
+  return apiRequest(`/messages/conversations/${conversationId}/mark-read`, {
+    method: 'POST',
+  });
+}
+
+export async function startConversation(participantId) {
+  return apiRequest('/messages/start', {
+    method: 'POST',
+    body: JSON.stringify({ participantId }),
+  });
+}
+
+export async function getMentorList() {
+  return apiRequest('/messages/mentors');
+}
+
+export async function getStudentList() {
+  return apiRequest('/messages/students');
+}
+
+// ANNOUNCEMENTS ENDPOINTS
+export async function getAnnouncements() {
+  return apiRequest('/announcements');
+}
+
+export async function getAnnouncement(id) {
+  return apiRequest(`/announcements/${id}`);
+}
+
+export async function createAnnouncement(title, content, isPinned) {
+  return apiRequest('/announcements', {
+    method: 'POST',
+    body: JSON.stringify({ title, content, isPinned }),
+  });
+}
+
+export async function updateAnnouncement(id, title, content, isPinned) {
+  return apiRequest(`/announcements/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ title, content, isPinned }),
+  });
+}
+
+export async function deleteAnnouncement(id) {
+  return apiRequest(`/announcements/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function markAnnouncementAsRead(id) {
+  return apiRequest(`/announcements/${id}/read`, {
+    method: 'POST',
+  });
+}
+
+export async function pinAnnouncement(id) {
+  return apiRequest(`/announcements/${id}/pin`, {
+    method: 'POST',
+  });
+}
+
+// SESSION UPDATE ENDPOINTS
+export async function updateSession(sessionId, sessionData) {
+  return apiRequest(`/mentor/sessions/${sessionId}`, {
+    method: 'PUT',
+    body: JSON.stringify(sessionData),
+  });
 }

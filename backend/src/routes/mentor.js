@@ -448,6 +448,29 @@ router.post('/sessions/:sessionId/attendance', requireAuth, requireMentor, async
 
     if (operations.length > 0) {
       await Attendance.bulkWrite(operations);
+
+      // Send notifications to students about attendance marking
+      try {
+        const changedStudentIds = attendance.map(item => item.studentId);
+        const changedStudents = await Student.find({ _id: { $in: changedStudentIds } })
+          .populate('authUserId');
+
+        const session = await Session.findById(sessionId);
+        const notifications = changedStudents.map(student => ({
+          userId: student.authUserId._id,
+          title: 'Attendance Marked',
+          message: `Your attendance has been marked for session: ${topic || session?.topic || 'General'}`,
+          type: 'info',
+          link: '/attendance'
+        }));
+
+        if (notifications.length > 0) {
+          await Notification.insertMany(notifications);
+        }
+      } catch (notifErr) {
+        console.error('Error sending attendance notifications:', notifErr);
+        // Don't fail the request if notifications error
+      }
     }
 
     return res.json({ success: true, message: 'Attendance saved successfully' });
@@ -615,6 +638,41 @@ router.post('/import/execute', requireAuth, requireMentor, async (req, res) => {
   } catch (error) {
     console.error('Import execution failed:', error);
     return res.status(500).json({ error: 'Import failed' });
+  }
+});
+
+// PUT /api/mentor/sessions/:sessionId - Update session details (times, location, etc.)
+router.put('/sessions/:sessionId', requireAuth, requireMentor, async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { topic, startTime, endTime, sessionType, location, meetingLink, notes, durationHours } = req.body;
+
+    const session = await Session.findById(sessionId);
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    // Update allowed fields
+    if (topic) session.topic = topic.trim();
+    if (startTime) session.startTime = startTime;
+    if (endTime) session.endTime = endTime;
+    if (sessionType) session.sessionType = sessionType;
+    if (location) session.location = location.trim();
+    if (meetingLink) session.meetingLink = meetingLink.trim();
+    if (notes !== undefined) session.notes = notes ? notes.trim() : null;
+    if (durationHours) session.durationHours = parseFloat(durationHours);
+    if (req.auth.user._id) session.mentorId = req.auth.user._id;
+
+    await session.save();
+
+    return res.json({
+      success: true,
+      message: 'Session updated successfully',
+      session: session.toObject()
+    });
+  } catch (error) {
+    console.error('Error updating session:', error);
+    return res.status(500).json({ error: 'Failed to update session' });
   }
 });
 

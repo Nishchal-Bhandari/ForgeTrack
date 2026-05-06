@@ -72,7 +72,7 @@ router.post('/login', async (req, res) => {
   const user = await User.findOne(query);
 
   if (!user) {
-    return res.status(404).json({ error: 'Account not found.' });
+    return res.status(401).json({ error: 'Invalid credentials.' });
   }
 
   let matches = false;

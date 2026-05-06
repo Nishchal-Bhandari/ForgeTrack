@@ -8,6 +8,12 @@ const sessionSchema = new mongoose.Schema(
     durationHours: { type: Number, default: 2 },
     sessionType: { type: String, default: 'offline', trim: true },
     notes: { type: String, default: null, trim: true },
+    startTime: { type: String, default: null, trim: true }, // Format: "HH:mm"
+    endTime: { type: String, default: null, trim: true },   // Format: "HH:mm"
+    mentorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    meetingLink: { type: String, default: null, trim: true },
+    location: { type: String, default: null, trim: true },
+    isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

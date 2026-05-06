@@ -6,9 +6,12 @@ import { Attendance } from './models/Attendance.js';
 import { Material } from './models/Material.js';
 import { Session } from './models/Session.js';
 import { Student } from './models/Student.js';
+import { User } from './models/User.js';
 import authRouter from './routes/auth.js';
 import mentorRouter from './routes/mentor.js';
 import studentRouter from './routes/student.js';
+import messagesRouter from './routes/messages.js';
+import announcementsRouter from './routes/announcements.js';
 
 dotenv.config();
 
@@ -75,11 +78,55 @@ app.use('/api/admin/seed', async (req, res) => {
   }
 });
 
+app.post('/api/admin/clear-students', async (req, res) => {
+  console.log('CLEAR STUDENTS ENDPOINT CALLED');
+  try {
+    const students = await Student.find({}, { authUserId: 1 }).lean();
+    const linkedUserIds = students
+      .map((student) => student.authUserId)
+      .filter(Boolean);
+
+    const [studentDeleteResult, linkedUsersDeleteResult, roleUsersDeleteResult] = await Promise.all([
+      Student.deleteMany({}),
+      linkedUserIds.length ? User.deleteMany({ _id: { $in: linkedUserIds } }) : Promise.resolve({ deletedCount: 0 }),
+      User.deleteMany({ role: 'student' }),
+    ]);
+
+    const usersDeleted = Math.max(
+      linkedUsersDeleteResult?.deletedCount || 0,
+      roleUsersDeleteResult?.deletedCount || 0
+    );
+
+    console.log(`Deleted ${studentDeleteResult.deletedCount} students and ${usersDeleted} student users`);
+    res.json({
+      ok: true,
+      message: `Deleted ${studentDeleteResult.deletedCount} students and ${usersDeleted} student users`,
+      deleted: {
+        students: studentDeleteResult.deletedCount,
+        users: usersDeleted,
+      },
+    });
+  } catch (error) {
+    console.error('CLEAR STUDENTS ERROR:', error);
+    res.status(500).json({ error: 'Clear failed', message: error.message });
+  }
+});
+
 app.use('/api/auth', authRouter);
+console.log('Auth router registered');
 app.use('/api/mentor', mentorRouter);
+console.log('Mentor router registered');
 app.use('/api/student', studentRouter);
+console.log('Student router registered');
+app.use('/api/messages', messagesRouter);
+console.log('Messages router registered');
+app.use('/api/announcements', announcementsRouter);
+console.log('Announcements router registered');
+
+console.log('All routes registered');
 
 app.use((_req, res) => {
+  console.log('404 - Not found:', _req.method, _req.url);
   res.status(404).json({ error: 'Not found.' });
 });
 

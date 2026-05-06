@@ -68,10 +68,10 @@ export const MentorDashboard = () => {
       {/* Header Section */}
       <section className="flex flex-col gap-1">
         <h2 className="font-display text-4xl md:text-5xl font-bold text-fg-primary tracking-tight">
-          Welcome back, <span className="text-white">{user?.name || 'Nischay'}</span>
+          Welcome back, <span className="text-white">{user?.name || 'Mentor'}</span>
         </h2>
         <p className="text-fg-tertiary text-sm font-medium">
-          Thursday, Apr 30
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
       </section>
 

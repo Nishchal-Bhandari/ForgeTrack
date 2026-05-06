@@ -103,7 +103,8 @@ router.get('/attendance-history', requireAuth, ensureStudent, async (req, res) =
 
     const total = await Attendance.countDocuments(query);
     const records = await Attendance.find(query)
-      .populate('sessionId', 'date topic duration_hours')
+      .populate('sessionId', 'date topic durationHours')
+      .populate('markedBy', 'displayName')
       .sort({ markedAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -113,8 +114,9 @@ router.get('/attendance-history', requireAuth, ensureStudent, async (req, res) =
         date: record.sessionId.date,
         topic: record.sessionId.topic,
         status: record.status,
-        duration: record.sessionId.duration_hours,
+        duration: record.sessionId.durationHours,
         markedAt: record.markedAt,
+        mentorName: record.markedBy?.displayName || 'Mentor',
       })),
       pagination: {
         page: parseInt(page),
@@ -135,7 +137,8 @@ router.get('/upcoming-session', requireAuth, ensureStudent, async (req, res) => 
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
-    const upcoming = await Session.findOne({ date: { $gte: today } })
+    const upcoming = await Session.findOne({ date: { $gte: today }, isActive: true })
+      .populate('mentorId', 'displayName')
       .sort({ date: 1 });
 
     return res.json({ session: upcoming });
@@ -195,6 +198,69 @@ router.get('/notifications', requireAuth, ensureStudent, async (req, res) => {
   } catch (error) {
     console.error('Error fetching notifications:', error);
     return res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+// POST /api/student/notifications/:id/read - Mark notification as read
+router.post('/notifications/:id/read', requireAuth, ensureStudent, async (req, res) => {
+  try {
+    await Notification.findByIdAndUpdate(req.params.id, { isRead: true });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    return res.status(500).json({ error: 'Failed to mark notification as read' });
+  }
+});
+
+// POST /api/student/notifications/read-all - Mark all notifications as read
+router.post('/notifications/read-all', requireAuth, ensureStudent, async (req, res) => {
+  try {
+    await Notification.updateMany({ userId: req.auth.user._id, isRead: false }, { isRead: true });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    return res.status(500).json({ error: 'Failed to mark all notifications as read' });
+  }
+});
+
+// GET /api/student/heatmap - Get attendance heatmap data (30 days)
+router.get('/heatmap', requireAuth, ensureStudent, async (req, res) => {
+  try {
+    const student = await Student.findOne({ authUserId: req.auth.user._id });
+
+    if (!student) {
+      return res.status(404).json({ error: 'Student record not found' });
+    }
+
+    const heatmap = {};
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    
+    // Get last 30 days of attendance
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(today.getDate() - i);
+      d.setUTCHours(0, 0, 0, 0);
+      
+      const dateStr = d.toISOString().split('T')[0];
+      
+      const attendance = await Attendance.findOne({
+        studentId: student._id,
+        markedAt: {
+          $gte: d,
+          $lt: new Date(d.getTime() + 24 * 60 * 60 * 1000)
+        }
+      });
+
+      heatmap[dateStr] = attendance 
+        ? (attendance.status === 'present' ? 'present' : 'absent')
+        : 'none';
+    }
+
+    return res.json({ heatmap });
+  } catch (error) {
+    console.error('Error fetching heatmap:', error);
+    return res.status(500).json({ error: 'Failed to fetch heatmap' });
   }
 });
 

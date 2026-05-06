@@ -14,6 +14,8 @@ import StudentAttendance from './pages/student/StudentAttendance';
 import UpcomingSession from './pages/student/UpcomingSession';
 import Settings from './pages/Settings';
 import ChangePassword from './pages/ChangePassword';
+import Messaging from './pages/Messaging';
+import Announcements from './pages/Announcements';
 import Forbidden from './pages/Forbidden';
 import { Toaster } from 'react-hot-toast';
 import './App.css';
@@ -49,6 +51,8 @@ function AppRoutes() {
       <Route element={<RoleGuard><AppShell /></RoleGuard>}>
         <Route path="/settings" element={<RouteFade><Settings /></RouteFade>} />
         <Route path="/change-password" element={<RouteFade><ChangePassword /></RouteFade>} />
+        <Route path="/messages" element={<RouteFade><Messaging /></RouteFade>} />
+        <Route path="/announcements" element={<RouteFade><Announcements /></RouteFade>} />
         
         {/* Mentor Routes */}
         <Route path="/mentor/dashboard" element={<RoleGuard role="mentor"><RouteFade><MentorDashboard /></RouteFade></RoleGuard>} />
