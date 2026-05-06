@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+
 import Card from '../../components/ui/Card';
 import HeatmapGrid from '../../components/ui/HeatmapGrid';
 import StatusPill from '../../components/ui/StatusPill';
 import Button from '../../components/ui/Button';
-import { Download, FileText, Loader2 } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { getAttendanceStats, getAttendanceHistory, getAttendanceHeatmap } from '../../lib/api';
 import toast from 'react-hot-toast';
+import { clsx } from 'clsx';
 
 export const StudentAttendance = () => {
-  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [history, setHistory] = useState([]);
   const [heatmap, setHeatmap] = useState([]);

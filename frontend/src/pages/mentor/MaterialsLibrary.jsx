@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BookOpen, 
   Search, 
@@ -34,18 +34,18 @@ export const MaterialsLibrary = ({ role = 'student' }) => {
     description: ''
   });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const res = role === 'mentor' ? await getMaterials() : await getStudentMaterials();
       setMaterials(res.materials);
-    } catch (err) {
+    } catch (error) {
       toast.error('Failed to load materials');
-      console.error(err);
+      console.error(error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [role]);
 
   useEffect(() => {
     fetchData();

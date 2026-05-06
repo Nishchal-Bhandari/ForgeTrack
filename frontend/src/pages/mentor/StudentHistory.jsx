@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, 
-  ChevronLeft, 
-  ChevronRight, 
-  FileText, 
-  Clock,
-  Calendar,
-  AlertCircle,
   Download,
   Loader2,
   TrendingUp,
@@ -28,7 +22,6 @@ export const StudentHistory = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [searching, setSearching] = useState(true);
 
   useEffect(() => {
     const fetchAllStudents = async () => {
@@ -38,7 +31,7 @@ export const StudentHistory = () => {
       } catch (err) {
         console.error(err);
       } finally {
-        setSearching(false);
+        setLoading(false);
       }
     };
     fetchAllStudents();

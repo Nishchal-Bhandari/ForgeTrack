@@ -10,26 +10,21 @@ import { requireAuth, requireMentor } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Middleware: Ensure user is mentor
-function ensureMentor(req, res, next) {
-  if (req.auth.user.role !== 'mentor') {
-    return res.status(403).json({ error: 'Only mentors can perform this action' });
-  }
-  next();
-}
+
 
 // GET /api/mentor/students - List all students for this mentor
-router.get('/students', requireAuth, ensureMentor, async (req, res) => {
+router.get('/students', requireAuth, requireMentor, async (req, res) => {
   try {
     const students = await Student.find({ mentorId: req.auth.user._id })
       .select('-passwordHash')
       .sort({ createdAt: -1 });
 
+    const today = new Date();
+    const totalSessions = await Session.countDocuments({ date: { $lte: today } });
+
     // Enrich with attendance statistics
     const enrichedStudents = await Promise.all(
       students.map(async (student) => {
-        const today = new Date();
-        const totalSessions = await Session.countDocuments({ date: { $lte: today } });
         const presentCount = await Attendance.countDocuments({ studentId: student._id, status: 'present' });
 
         return {
@@ -47,7 +42,7 @@ router.get('/students', requireAuth, ensureMentor, async (req, res) => {
 });
 
 // POST /api/mentor/add-student - Add a new student
-router.post('/add-student', requireAuth, ensureMentor, async (req, res) => {
+router.post('/add-student', requireAuth, requireMentor, async (req, res) => {
   try {
     const { fullName, usn, email, department, phone, batchYear, username, password, confirmPassword } = req.body;
     console.log('DEBUG: add-student request body:', req.body);
@@ -127,7 +122,7 @@ router.post('/add-student', requireAuth, ensureMentor, async (req, res) => {
 });
 
 // DELETE /api/mentor/students/:studentId - Remove a student
-router.delete('/students/:studentId', requireAuth, ensureMentor, async (req, res) => {
+router.delete('/students/:studentId', requireAuth, requireMentor, async (req, res) => {
   try {
     const { studentId } = req.params;
 
@@ -163,7 +158,7 @@ router.delete('/students/:studentId', requireAuth, ensureMentor, async (req, res
 });
 
 // PUT /api/mentor/students/:studentId - Update student info
-router.put('/students/:studentId', requireAuth, ensureMentor, async (req, res) => {
+router.put('/students/:studentId', requireAuth, requireMentor, async (req, res) => {
   try {
     const { studentId } = req.params;
     const { fullName, department, phone, batchYear } = req.body;
@@ -202,7 +197,7 @@ router.put('/students/:studentId', requireAuth, ensureMentor, async (req, res) =
 });
 
 // POST /api/mentor/students/:studentId/reset-password - Reset student password
-router.post('/students/:studentId/reset-password', requireAuth, ensureMentor, async (req, res) => {
+router.post('/students/:studentId/reset-password', requireAuth, requireMentor, async (req, res) => {
   try {
     const { studentId } = req.params;
     const { newPassword, confirmPassword } = req.body;
@@ -551,8 +546,9 @@ router.post('/import/execute', requireAuth, requireMentor, async (req, res) => {
 
     for (const row of data) {
       try {
-        const usn = row[mapping.usn];
+        const usn = row[mapping.usn]?.toUpperCase();
         const fullName = row[mapping.fullName];
+        const email = row[mapping.email]?.toLowerCase() || `${usn}@forgetrack.edu`; // Default email if missing
         
         if (!usn || !fullName) {
           skippedRows++;
@@ -560,17 +556,42 @@ router.post('/import/execute', requireAuth, requireMentor, async (req, res) => {
           continue;
         }
 
+        // Check if user already exists
+        let authUser = await User.findOne({ email });
+        if (!authUser) {
+          // Create auth user with default password (USN)
+          const passwordHash = await bcrypt.hash(usn, 12);
+          authUser = new User({
+            email,
+            passwordHash,
+            role: 'student',
+            displayName: fullName,
+            mustChangePassword: true
+          });
+          await authUser.save();
+        }
+
         // Upsert student
-        await Student.findOneAndUpdate(
+        const student = await Student.findOneAndUpdate(
           { usn },
           {
             fullName,
+            email,
             department: row[mapping.department] || 'Unknown',
             batchYear: parseInt(row[mapping.batchYear]) || new Date().getFullYear(),
+            mentorId: req.auth.user._id,
+            authUserId: authUser._id,
             isActive: true
           },
           { upsert: true, new: true }
         );
+
+        // Ensure user is linked back
+        if (!authUser.studentId) {
+          authUser.studentId = student._id;
+          authUser.studentUsn = usn;
+          await authUser.save();
+        }
         
         importedRows++;
       } catch (err) {

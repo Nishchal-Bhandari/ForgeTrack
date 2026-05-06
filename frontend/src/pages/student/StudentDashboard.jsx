@@ -82,18 +82,7 @@ export const StudentDashboard = () => {
     attendedSessions: stats?.sessionsAttended || 0
   };
 
-  const nextSession = {
-    date: "APR 30",
-    time: "2:30 PM",
-    topic: "Advanced TypeScript Patterns",
-    type: "Live Session",
-    notes: "Please review the previous slides on Generics before joining."
-  };
 
-  const heatmapData = Array.from({ length: 30 }, (_, i) => ({
-    date: `2026-04-${i + 1}`,
-    status: i < 15 ? (Math.random() > 0.8 ? 'absent' : 'present') : 'none'
-  }));
 
   return (
     <div className="space-y-8 animate-fade-in">

@@ -15,7 +15,6 @@ import Button from '../../components/ui/Button';
 import Avatar from '../../components/ui/Avatar';
 import StatusPill from '../../components/ui/StatusPill';
 import { getUpcomingSession } from '../../lib/api';
-import toast from 'react-hot-toast';
 
 export const UpcomingSession = () => {
   const [session, setSession] = useState(null);

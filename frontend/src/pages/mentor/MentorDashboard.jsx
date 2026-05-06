@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Users, 
   ClipboardCheck, 
   Calendar, 
   TrendingUp, 
-  Clock,
   ArrowRight,
   Plus,
-  Activity,
   UserCheck,
-  AlertTriangle,
   Loader2
 } from 'lucide-react';
 import { clsx } from 'clsx';
