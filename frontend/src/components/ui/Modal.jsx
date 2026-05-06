@@ -20,17 +20,17 @@ export const Modal = ({ isOpen, onClose, title, children, footer, className }) =
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center px-4 py-16 sm:py-24 overflow-y-auto custom-scrollbar bg-black/60 backdrop-blur-sm">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+        className="fixed inset-0 transition-opacity duration-300"
         onClick={() => onClose?.()}
       />
       
       {/* Modal Box */}
       <div className={clsx(
-        'relative bg-surface-raised rounded-2xl border border-border-strong w-full max-w-md shadow-2xl animate-slide-up overflow-hidden',
-        className
+        'relative bg-surface-raised rounded-2xl border border-border-strong w-full shadow-2xl animate-slide-up overflow-hidden my-auto',
+        className || 'max-w-md'
       )}>
         <div className="absolute inset-0 bg-card-shine pointer-events-none" />
         

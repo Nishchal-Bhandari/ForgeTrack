@@ -13,41 +13,47 @@ import Card from '../../components/ui/Card';
 import HeatmapGrid from '../../components/ui/HeatmapGrid';
 import ProgressBar from '../../components/ui/ProgressBar';
 import StatusPill from '../../components/ui/StatusPill';
-import { getStudentRecord, getAttendanceStats, getAttendanceHistory, getAttendanceHeatmap } from '../../lib/api';
+import { getStudentRecord, getAttendanceStats, getAttendanceHistory, getAttendanceHeatmap, getUpcomingSession } from '../../lib/api';
+import { Loader2 } from 'lucide-react';
 
 export const StudentDashboard = () => {
   const { user } = useAuth();
   const [studentData, setStudentData] = useState(null);
   const [stats, setStats] = useState(null);
   const [history, setHistory] = useState([]);
+  const [heatmap, setHeatmap] = useState([]);
+  const [upcoming, setUpcoming] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [studentRes, statsRes, historyRes, heatmapRes] = await Promise.all([
+        const [studentRes, statsRes, historyRes, heatmapRes, upcomingRes] = await Promise.all([
           getStudentRecord(),
           getAttendanceStats(),
           getAttendanceHistory(1, 4),
           getAttendanceHeatmap(),
+          getUpcomingSession()
         ]);
 
         setStudentData(studentRes.student);
         setStats(statsRes.stats);
         setHistory(historyRes.history);
+        setUpcoming(upcomingRes.session);
 
         // Convert heatmap to grid format
-        const heatmapData = [];
-        Object.entries(heatmapRes.heatmap || {}).forEach(([date, status]) => {
-          heatmapData.push({ date, status });
-        });
-        // Fill in remaining days as 'none'
-        for (let i = 1; i <= 30; i++) {
-          const dateStr = `2026-04-${String(i).padStart(2, '0')}`;
-          if (!heatmapData.find(d => d.date === dateStr)) {
-            heatmapData.push({ date: dateStr, status: 'none' });
-          }
+        const hData = [];
+        const today = new Date();
+        for (let i = 29; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(today.getDate() - i);
+          const dateStr = d.toISOString().split('T')[0];
+          hData.push({
+            date: dateStr,
+            status: heatmapRes.heatmap[dateStr] || 'none'
+          });
         }
+        setHeatmap(hData);
       } catch (error) {
         console.error('Error fetching student data:', error);
       } finally {
@@ -60,8 +66,8 @@ export const StudentDashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p style={{ color: 'var(--text-secondary)' }}>Loading dashboard...</p>
+      <div className="h-[60vh] flex items-center justify-center">
+        <Loader2 className="animate-spin text-accent" size={40} />
       </div>
     );
   }
@@ -156,9 +162,9 @@ export const StudentDashboard = () => {
         {/* Heatmap */}
         <Card className="flex flex-col h-full">
           <HeatmapGrid 
-            data={heatmapData} 
-            month="April" 
-            year="2026" 
+            data={heatmap} 
+            month={new Date().toLocaleString('default', { month: 'long' })} 
+            year={new Date().getFullYear().toString()} 
             onMonthChange={() => {}}
           />
           <div className="mt-auto pt-6 flex justify-between items-center text-xs text-fg-tertiary font-mono uppercase tracking-widest">
@@ -173,34 +179,45 @@ export const StudentDashboard = () => {
             Upcoming Session
           </span>
           
-          <div className="flex justify-between items-start mb-4">
-            <div className="text-[48px] md:text-[56px] font-display font-bold text-fg-primary leading-none tabular-nums">
-              {nextSession.date}
-            </div>
-            <StatusPill status="info" />
-          </div>
+          {upcoming ? (
+            <>
+              <div className="flex justify-between items-start mb-4">
+                <div className="text-[48px] md:text-[56px] font-display font-bold text-fg-primary leading-none tabular-nums">
+                  {new Date(upcoming.date).toLocaleDateString('en-US', { day: '2-digit', month: 'short' }).toUpperCase()}
+                </div>
+                <StatusPill status="info" label={upcoming.sessionType} />
+              </div>
 
-          <h3 className="text-2xl font-bold text-fg-primary mb-2">
-            {nextSession.topic}
-          </h3>
-          
-          <div className="flex gap-4 mb-6">
-            <div className="flex items-center gap-2 text-fg-secondary">
-              <Clock size={16} />
-              <span className="text-sm font-mono">{nextSession.time}</span>
-            </div>
-            <div className="flex items-center gap-2 text-fg-secondary">
-              <MapPin size={16} />
-              <span className="text-sm">Online (Zoom)</span>
-            </div>
-          </div>
+              <h3 className="text-2xl font-bold text-fg-primary mb-2">
+                {upcoming.topic}
+              </h3>
+              
+              <div className="flex gap-4 mb-6">
+                <div className="flex items-center gap-2 text-fg-secondary">
+                  <Clock size={16} />
+                  <span className="text-sm font-mono">10:00 AM</span>
+                </div>
+                <div className="flex items-center gap-2 text-fg-secondary">
+                  <MapPin size={16} />
+                  <span className="text-sm">{upcoming.sessionType === 'online' ? 'Online (Zoom)' : 'Main Campus'}</span>
+                </div>
+              </div>
 
-          <div className="mt-auto p-4 rounded-xl bg-surface-inset border border-border-subtle flex gap-4">
-            <AlertCircle size={20} className="text-accent shrink-0" />
-            <p className="text-xs text-fg-secondary italic leading-relaxed">
-              {nextSession.notes}
-            </p>
-          </div>
+              {upcoming.notes && (
+                <div className="mt-auto p-4 rounded-xl bg-surface-inset border border-border-subtle flex gap-4">
+                  <AlertCircle size={20} className="text-accent shrink-0" />
+                  <p className="text-xs text-fg-secondary italic leading-relaxed">
+                    {upcoming.notes}
+                  </p>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-10">
+              <Calendar size={48} className="text-fg-tertiary opacity-20 mb-4" />
+              <p className="text-fg-tertiary italic">No upcoming sessions scheduled.</p>
+            </div>
+          )}
         </Card>
       </div>
 

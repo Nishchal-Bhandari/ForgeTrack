@@ -93,13 +93,75 @@ export async function resetStudentPassword(studentId, newPassword, confirmPasswo
   });
 }
 
+export async function getSessionByDate(date) {
+  return apiRequest(`/mentor/sessions/${date}`);
+}
+
+export async function getSessionAttendance(sessionId) {
+  return apiRequest(`/mentor/sessions/${sessionId}/attendance`);
+}
+
+export async function saveAttendance(sessionId, attendanceData) {
+  return apiRequest(`/mentor/sessions/${sessionId}/attendance`, {
+    method: 'POST',
+    body: JSON.stringify(attendanceData),
+  });
+}
+
+export async function getMentorStats() {
+  return apiRequest('/mentor/stats');
+}
+
+export async function getStudentAnalytics(studentId) {
+  return apiRequest(`/mentor/students/${studentId}/analytics`);
+}
+
+export async function getMaterials() {
+  return apiRequest('/mentor/materials');
+}
+
+export async function addMaterial(materialData) {
+  return apiRequest('/mentor/materials', {
+    method: 'POST',
+    body: JSON.stringify(materialData),
+  });
+}
+
+export async function removeMaterial(materialId) {
+  return apiRequest(`/mentor/materials/${materialId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function analyzeCsv(csvSnippet) {
+  return apiRequest('/mentor/import/analyze', {
+    method: 'POST',
+    body: JSON.stringify({ csvSnippet }),
+  });
+}
+
+export async function executeImport(filename, data, mapping) {
+  return apiRequest('/mentor/import/execute', {
+    method: 'POST',
+    body: JSON.stringify({ filename, data, mapping }),
+  });
+}
+
 // STUDENT ENDPOINTS
 export async function getStudentRecord() {
   return apiRequest('/student/me');
 }
 
+export async function getStudentMaterials() {
+  return apiRequest('/student/materials');
+}
+
 export async function getAttendanceStats() {
   return apiRequest('/student/attendance-stats');
+}
+
+export async function getUpcomingSession() {
+  return apiRequest('/student/upcoming-session');
 }
 
 export async function getAttendanceHistory(page = 1, limit = 15, month = null) {
@@ -117,4 +179,17 @@ export async function updateStudentProfile(profileData) {
     method: 'PUT',
     body: JSON.stringify(profileData),
   });
+}
+
+// NOTIFICATION ENDPOINTS
+export async function getNotifications() {
+  return apiRequest('/student/notifications');
+}
+
+export async function markNotificationRead(id) {
+  return apiRequest(`/student/notifications/${id}/read`, { method: 'POST' });
+}
+
+export async function markAllNotificationsRead() {
+  return apiRequest('/student/notifications/read-all', { method: 'POST' });
 }

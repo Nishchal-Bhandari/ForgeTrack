@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   ClipboardCheck, 
@@ -9,9 +9,11 @@ import {
   Plus,
   Activity,
   UserCheck,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import StatCard from '../../components/ui/StatCard';
 import Card from '../../components/ui/Card';
@@ -19,30 +21,49 @@ import ProgressBar from '../../components/ui/ProgressBar';
 import StatusPill from '../../components/ui/StatusPill';
 import Avatar from '../../components/ui/Avatar';
 import Button from '../../components/ui/Button';
+import { getMentorStats } from '../../lib/api';
+import toast from 'react-hot-toast';
 
 export const MentorDashboard = () => {
   const { user } = useAuth();
-  
-  const stats = [
-    { label: 'TOTAL SESSIONS', value: '30', icon: Calendar, delta: '+2', deltaType: 'up' },
-    { label: 'OVERALL ATTENDANCE', value: '82.3%', icon: TrendingUp, delta: '+1.2%', deltaType: 'up' },
-    { label: 'ACTIVE STUDENTS', value: '36', icon: Users },
-    { label: 'LAST SESSION', value: 'May 4, 2026', icon: Clock },
-  ];
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const recentActivity = [
-    { text: 'Marked attendance for Productionizing ML Models', time: '1d ago', icon: Activity },
-    { text: 'Marked attendance for Large Language Models 101', time: '1d ago', icon: Activity },
-    { text: 'Marked attendance for ReAct Agent Pattern', time: '1d ago', icon: Activity },
-    { text: 'Marked attendance for AI Safety and Ethics', time: '1d ago', icon: Activity },
-    { text: 'Marked attendance for Capstone Project Kickoff', time: '1d ago', icon: Activity },
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const result = await getMentorStats();
+        setData(result.stats);
+      } catch (err) {
+        toast.error('Failed to fetch dashboard stats');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="h-[60vh] flex items-center justify-center">
+        <Loader2 className="animate-spin text-accent" size={40} />
+      </div>
+    );
+  }
+
+  const stats = [
+    { label: 'TOTAL SESSIONS', value: data.totalSessions, icon: Calendar },
+    { label: 'AVG ATTENDANCE', value: `${data.avgAttendance}%`, icon: TrendingUp },
+    { label: 'ACTIVE STUDENTS', value: data.totalStudents, icon: Users },
+    { label: 'TODAY PERCENTAGE', value: data.today.total > 0 ? `${Math.round((data.today.present / data.today.total) * 100)}%` : 'N/A', icon: UserCheck },
   ];
 
   const programMetrics = [
-    { label: 'Total Sessions', value: '30' },
-    { label: 'Average Attendance', value: '82.3%' },
-    { label: 'Highest Attendance', value: 'Akash Jain', detail: '100.0%', type: 'success' },
-    { label: 'Lowest Attendance', value: 'Shruthi P', detail: '66.7%', type: 'danger' },
+    { label: 'Total Sessions', value: data.totalSessions },
+    { label: 'Average Attendance', value: `${data.avgAttendance}%` },
+    { label: 'Present Today', value: data.today.present, type: 'success' },
+    { label: 'Absent Today', value: data.today.absent, type: 'danger' },
   ];
 
   return (
@@ -77,20 +98,52 @@ export const MentorDashboard = () => {
           <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-fg-tertiary mb-4">
             TODAY'S SESSION
           </span>
-          <p className="text-fg-secondary text-sm mb-6">No session scheduled for today.</p>
-          <div className="mt-auto">
-            <Button variant="primary" size="md">
-              <Plus size={18} />
-              Create Session
-            </Button>
-          </div>
+          {data.today.total > 0 || data.today.sessionTopic !== 'No session today' ? (
+            <>
+              <h3 className="text-xl font-bold text-white mb-2">{data.today.sessionTopic}</h3>
+              <p className="text-fg-secondary text-sm mb-6">Attendance is currently being tracked.</p>
+              <div className="mt-auto">
+                <Link to="/mentor/mark-attendance">
+                  <Button variant="primary" size="md">
+                    <ClipboardCheck size={18} />
+                    Mark Attendance
+                  </Button>
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-fg-secondary text-sm mb-6">No session scheduled for today.</p>
+              <div className="mt-auto">
+                <Link to="/mentor/mark-attendance">
+                  <Button variant="primary" size="md">
+                    <Plus size={18} />
+                    Create Session
+                  </Button>
+                </Link>
+              </div>
+            </>
+          )}
         </Card>
 
         <Card className="flex flex-col min-h-[160px]">
           <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-fg-tertiary mb-4">
             TODAY'S ATTENDANCE
           </span>
-          <p className="text-fg-secondary text-sm">Create a session first to mark attendance.</p>
+          {data.today.total > 0 ? (
+            <div className="space-y-4">
+              <div className="flex justify-between items-end">
+                <div>
+                  <span className="text-3xl font-bold text-white">{data.today.present}</span>
+                  <span className="text-fg-tertiary text-sm ml-2">/ {data.today.total} present</span>
+                </div>
+                <StatusPill status={data.today.present / data.today.total > 0.8 ? 'success' : 'warning'} label={`${Math.round((data.today.present / data.today.total) * 100)}%`} />
+              </div>
+              <ProgressBar progress={(data.today.present / data.today.total) * 100} size="md" />
+            </div>
+          ) : (
+            <p className="text-fg-secondary text-sm">Create a session first to mark attendance.</p>
+          )}
         </Card>
       </div>
 
@@ -133,29 +186,44 @@ export const MentorDashboard = () => {
           </div>
         </Card>
 
-        {/* Recent Activity */}
+        {/* Absent Students */}
         <Card className="flex flex-col h-full">
           <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-fg-tertiary mb-6">
-            RECENT ACTIVITY
+            ABSENT STUDENTS (TODAY)
           </span>
           
           <div className="space-y-6 relative">
-            {recentActivity.map((activity, idx) => (
-              <div key={idx} className="flex gap-4 group">
-                <div className="w-8 h-8 rounded-lg bg-surface-raised border border-border-subtle flex items-center justify-center shrink-0 group-hover:border-accent/40 group-hover:bg-accent/5 transition-all">
-                  <activity.icon size={16} className="text-fg-tertiary group-hover:text-accent transition-colors" />
+            {data.today.absentStudents && data.today.absentStudents.length > 0 ? (
+              data.today.absentStudents.map((student, idx) => (
+                <div key={idx} className="flex gap-4 group items-center">
+                  <Avatar name={student.fullName} size="sm" />
+                  <div className="flex flex-col min-w-0">
+                    <p className="text-sm font-semibold text-fg-primary leading-snug group-hover:text-white transition-colors">
+                      {student.fullName}
+                    </p>
+                    <span className="text-[10px] font-mono text-fg-tertiary mt-1 uppercase tracking-wider">
+                      {student.usn}
+                    </span>
+                  </div>
+                  <div className="ml-auto">
+                    <StatusPill status="danger" label="Absent" />
+                  </div>
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <p className="text-sm text-fg-primary leading-snug group-hover:text-white transition-colors">
-                    {activity.text}
-                  </p>
-                  <span className="text-[10px] font-mono text-fg-tertiary mt-1 uppercase tracking-wider">
-                    {activity.time}
-                  </span>
-                </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <UserCheck size={32} className="text-fg-tertiary mb-2 opacity-20" />
+                <p className="text-sm text-fg-tertiary italic">No absent students recorded for today.</p>
               </div>
-            ))}
+            )}
           </div>
+          {data.today.absentStudents?.length > 0 && (
+            <div className="mt-auto pt-6">
+              <Link to="/mentor/student-history" className="text-accent text-[11px] font-bold uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">
+                View Full History <ArrowRight size={14} />
+              </Link>
+            </div>
+          )}
         </Card>
       </div>
     </div>

@@ -1,25 +1,61 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Card from '../../components/ui/Card';
 import HeatmapGrid from '../../components/ui/HeatmapGrid';
 import StatusPill from '../../components/ui/StatusPill';
 import Button from '../../components/ui/Button';
-import { Download, FileText } from 'lucide-react';
+import { Download, FileText, Loader2 } from 'lucide-react';
+import { getAttendanceStats, getAttendanceHistory, getAttendanceHeatmap } from '../../lib/api';
+import toast from 'react-hot-toast';
 
 export const StudentAttendance = () => {
   const { user } = useAuth();
+  const [stats, setStats] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [heatmap, setHeatmap] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const heatmapData = Array.from({ length: 30 }, (_, i) => ({
-    date: `2026-04-${i + 1}`,
-    status: i < 15 ? (Math.random() > 0.8 ? 'absent' : 'present') : 'none'
-  }));
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsRes, historyRes, heatmapRes] = await Promise.all([
+          getAttendanceStats(),
+          getAttendanceHistory(1, 50),
+          getAttendanceHeatmap(),
+        ]);
 
-  const history = [
-    { date: '2026-04-28', topic: 'React Performance Optimization', status: 'present', duration: '90 min', mentor: 'Nischay' },
-    { date: '2026-04-26', topic: 'Redux Toolkit Fundamentals', status: 'present', duration: '120 min', mentor: 'Nischay' },
-    { date: '2026-04-24', topic: 'Introduction to TypeScript', status: 'absent', duration: '90 min', mentor: 'Nischay' },
-    { date: '2026-04-22', topic: 'CSS Architecture with Tailwind', status: 'present', duration: '60 min', mentor: 'Nischay' },
-  ];
+        setStats(statsRes.stats);
+        setHistory(historyRes.history);
+
+        const hData = [];
+        const today = new Date();
+        for (let i = 29; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(today.getDate() - i);
+          const dateStr = d.toISOString().split('T')[0];
+          hData.push({
+            date: dateStr,
+            status: heatmapRes.heatmap[dateStr] || 'none'
+          });
+        }
+        setHeatmap(hData);
+      } catch (err) {
+        toast.error('Failed to load attendance records');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="h-[60vh] flex items-center justify-center">
+        <Loader2 className="animate-spin text-accent" size={40} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -36,29 +72,31 @@ export const StudentAttendance = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <Card className="lg:col-span-4 flex flex-col items-center justify-center text-center py-10">
-          <div className="text-[64px] font-display font-bold text-success leading-none mb-2">88%</div>
+          <div className={clsx(
+            "text-[64px] font-display font-bold leading-none mb-2",
+            stats?.attendancePercentage >= 75 ? "text-success" : 
+            stats?.attendancePercentage >= 60 ? "text-warning" : "text-danger"
+          )}>
+            {stats?.attendancePercentage || 0}%
+          </div>
           <p className="text-[11px] font-bold text-fg-tertiary uppercase tracking-widest">Attendance Score</p>
           <div className="mt-8 flex flex-col gap-2 w-full max-w-[200px]">
             <div className="flex justify-between text-xs">
               <span className="text-fg-secondary">Present</span>
-              <span className="text-fg-primary font-mono">16</span>
+              <span className="text-fg-primary font-mono">{stats?.sessionsAttended || 0}</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-fg-secondary">Absent</span>
-              <span className="text-fg-primary font-mono">2</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-fg-secondary">Excused</span>
-              <span className="text-fg-primary font-mono">0</span>
+              <span className="text-fg-primary font-mono">{stats?.sessionsMissed || 0}</span>
             </div>
           </div>
         </Card>
 
         <Card className="lg:col-span-8">
           <HeatmapGrid 
-            data={heatmapData} 
-            month="April" 
-            year="2026"
+            data={heatmap} 
+            month={new Date().toLocaleString('default', { month: 'long' })} 
+            year={new Date().getFullYear().toString()}
             onMonthChange={() => {}}
           />
         </Card>
@@ -76,12 +114,14 @@ export const StudentAttendance = () => {
                 <th className="px-8 py-4 text-[10px] font-bold text-fg-tertiary uppercase tracking-widest">Duration</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border-subtle">
+                <tbody className="divide-y divide-border-subtle">
               {history.map((session, idx) => (
                 <tr key={idx} className="hover:bg-surface-raised transition-colors">
-                  <td className="px-8 py-4 text-sm font-mono text-fg-tertiary">{session.date}</td>
+                  <td className="px-8 py-4 text-sm font-mono text-fg-tertiary">
+                    {new Date(session.date).toLocaleDateString()}
+                  </td>
                   <td className="px-8 py-4 text-sm font-semibold text-fg-primary">{session.topic}</td>
-                  <td className="px-8 py-4 text-sm text-fg-secondary">{session.mentor}</td>
+                  <td className="px-8 py-4 text-sm text-fg-secondary">Mentor</td>
                   <td className="px-8 py-4">
                     <StatusPill status={session.status} />
                   </td>

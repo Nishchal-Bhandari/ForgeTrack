@@ -8,7 +8,7 @@ import {
   Users, 
   Upload, 
   BookOpen, 
-  Settings, 
+  Settings as SettingsIcon, 
   LogOut,
   X,
   BarChart2,
@@ -39,6 +39,10 @@ export const Sidebar = ({ isOpen, onClose }) => {
     { name: 'My Attendance', icon: BarChart2, path: '/student/dashboard' },
     { name: 'Upcoming Session', icon: Calendar, path: '/student/upcoming' },
     { name: 'Materials', icon: BookOpen, path: '/student/materials' },
+  ];
+
+  const commonLinks = [
+    { name: 'Settings', icon: SettingsIcon, path: '/settings' },
   ];
 
   const links = user?.role === 'mentor' ? mentorLinks : studentLinks;
@@ -107,15 +111,21 @@ export const Sidebar = ({ isOpen, onClose }) => {
               <NavItem key={link.path} link={link} />
             ))}
           </div>
+
+          <div className="px-6 mt-6 mb-2">
+            <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--text-secondary)' }}>
+              Account
+            </span>
+          </div>
+          <div className="flex flex-col">
+            {commonLinks.map((link) => (
+              <NavItem key={link.path} link={link} />
+            ))}
+          </div>
         </nav>
 
         {/* Bottom Section */}
         <div className="p-4 border-t space-y-2" style={{ borderTopColor: 'rgba(255, 255, 255, 0.05)' }}>
-          <button className="w-full flex items-center gap-3 px-3 py-2 rounded-md transition-all" style={{ color: 'var(--text-secondary)' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.backgroundColor = 'transparent'; }}>
-            <Settings size={20} strokeWidth={1.75} />
-            <span className="text-sm font-medium">Settings</span>
-          </button>
-          
           <button 
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-md transition-all"
