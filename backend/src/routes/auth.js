@@ -41,6 +41,10 @@ function signToken(user) {
   );
 }
 
+function isBcryptHash(value) {
+  return typeof value === 'string' && /^\$2[aby]?\$/.test(value);
+}
+
 router.post('/login', async (req, res) => {
   console.log('LOGIN REQUEST RECEIVED:', req.body?.identifier);
   const { role, identifier, password } = req.body ?? {};
@@ -71,7 +75,22 @@ router.post('/login', async (req, res) => {
     return res.status(404).json({ error: 'Account not found.' });
   }
 
-  const matches = await bcrypt.compare(password, user.passwordHash);
+  let matches = false;
+
+  if (isBcryptHash(user.passwordHash)) {
+    try {
+      matches = await bcrypt.compare(password, user.passwordHash);
+    } catch (error) {
+      console.error('Password hash comparison failed:', error);
+      return res.status(500).json({ error: 'Login failed.' });
+    }
+  } else {
+    matches = String(user.passwordHash ?? '') === String(password);
+    if (matches) {
+      user.passwordHash = await bcrypt.hash(String(password), 12);
+    }
+  }
+
   if (!matches) {
     return res.status(401).json({ error: 'Invalid credentials.' });
   }
