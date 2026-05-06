@@ -75,7 +75,7 @@ export default function LoginPage() {
             <Input
               label="Email or USN"
               type={role === 'student' ? 'text' : 'email'}
-              placeholder={role === 'student' ? 'student@forge.local' : 'mentor@forge.local'}
+              placeholder={role === 'student' ? 'Enter your USN' : 'Enter your email'}
               value={identifier}
               onChange={(event) => setIdentifier(event.target.value)}
               required
@@ -109,10 +109,6 @@ export default function LoginPage() {
               Sign In
             </Button>
           </form>
-
-          <p className="mt-4 text-center text-[11px] text-fg-tertiary">
-            Demo: {role === 'mentor' ? 'mentor@forge.local / password123' : 'student@forge.local / 4SH24CS001'}
-          </p>
         </Card>
       </div>
     </div>

@@ -75,10 +75,9 @@ VITE_API_URL=https://api.yourdomain.com/api
 npm install && npm run dev:all
 ```
 
-### 👤 Test Credentials (Post-Seed)
-Once the database is seeded, use these accounts to verify RBAC:
-*   **Mentor Account:** `mentor@forge.local` / `password123`
-*   **Student Account:** `student@forge.local` / `4SH24CS001`
+### 👤 Account Access
+ForgeTrack is configured for real user onboarding.
+Create mentor and student accounts from the mentor workflow or your admin tooling, then sign in with those issued credentials.
 
 ---
 
@@ -115,4 +114,4 @@ We maintain high standards for code quality:
 ---
 
 ## 📜 Legal & Licensing
-Developed by **BOPPL Pvt. Ltd.** for **The Forge Bootcamp**. All rights reserved. Proprietary software for academic administrative optimization.
+Developed by **Nishchal Bhandari** for **The Forge Bootcamp**. All rights reserved. Proprietary software for academic administrative optimization.

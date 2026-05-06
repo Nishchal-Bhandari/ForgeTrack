@@ -1,5 +1,5 @@
 export const mentorDemo = {
-  name: 'Nischay',
+  name: 'Nishchal Bhandari',
   email: 'mentor@forge.local',
   lastLogin: 'Apr 29, 2026',
 };

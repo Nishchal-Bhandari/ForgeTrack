@@ -148,10 +148,10 @@ export const LoginPage = () => {
 
           <div className="mt-8 text-center">
             <p className="text-[11px] font-mono uppercase tracking-widest" style={{ color: 'var(--text-secondary)' }}>
-              Demo Credentials
+              Access
             </p>
             <p className="text-[11px] mt-1" style={{ color: 'var(--text-secondary)' }}>
-              {role === 'mentor' ? 'mentor@forge.local' : 'student@forge.local'} / {role === 'mentor' ? 'password123' : '4SH24CS001'}
+              Use credentials issued by your administrator.
             </p>
           </div>
         </Card>
