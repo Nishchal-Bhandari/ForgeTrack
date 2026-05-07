@@ -163,18 +163,11 @@ export const UpcomingSession = () => {
             <FileText size={16} className="text-accent" />
             Pre-session Resources
           </h4>
-          <div className="space-y-2">
-            {[
-              { label: 'Introduction to TS Slides', type: 'PDF' },
-              { label: 'Workshop Code Repo', type: 'Link' },
-            ].map((res, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-raised transition-colors cursor-pointer group">
-                <span className="text-sm text-fg-primary">{res.label}</span>
-                <span className="text-[10px] font-bold text-fg-tertiary bg-surface-inset px-2 py-1 rounded border border-border-subtle group-hover:border-accent group-hover:text-accent transition-colors">
-                  {res.type}
-                </span>
-              </div>
-            ))}
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <FileText size={28} className="text-fg-tertiary opacity-20 mb-3" />
+            <p className="text-sm text-fg-tertiary italic">
+              Your mentor will share materials before the session.
+            </p>
           </div>
         </Card>
       </div>

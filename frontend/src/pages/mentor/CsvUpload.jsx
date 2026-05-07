@@ -243,7 +243,24 @@ export const CsvUpload = () => {
           </div>
         );
 
-      case 2:
+      case 2: {
+        // Real-time client-side validation based on mapped CSV data
+        const requiredKeys = ['fullName', 'usn', 'department', 'batchYear'];
+        const validationRows = csvData.map((row, idx) => {
+          const missingFields = requiredKeys.filter(k => !mapping[k] || !row[mapping[k]]?.toString().trim());
+          if (missingFields.length > 0) {
+            return { row: idx + 1, status: 'danger', msg: `Missing: ${missingFields.join(', ')}` };
+          }
+          const batchYear = parseInt(row[mapping.batchYear]);
+          if (isNaN(batchYear) || batchYear < 2000 || batchYear > new Date().getFullYear() + 1) {
+            return { row: idx + 1, status: 'warning', msg: 'Batch year may be out of expected range' };
+          }
+          return { row: idx + 1, status: 'success', msg: 'Valid record' };
+        });
+        const readyCount = validationRows.filter(r => r.status === 'success').length;
+        const warnCount  = validationRows.filter(r => r.status === 'warning').length;
+        const errCount   = validationRows.filter(r => r.status === 'danger').length;
+
         return (
           <div className="animate-fade-in space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -252,7 +269,7 @@ export const CsvUpload = () => {
                   <CheckCircle size={20} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-fg-primary tabular-nums">22</p>
+                  <p className="text-2xl font-bold text-fg-primary tabular-nums">{readyCount}</p>
                   <p className="text-[10px] font-bold text-fg-tertiary uppercase tracking-widest">Ready</p>
                 </div>
               </Card>
@@ -261,7 +278,7 @@ export const CsvUpload = () => {
                   <AlertCircle size={20} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-fg-primary tabular-nums">2</p>
+                  <p className="text-2xl font-bold text-fg-primary tabular-nums">{warnCount}</p>
                   <p className="text-[10px] font-bold text-fg-tertiary uppercase tracking-widest">Warnings</p>
                 </div>
               </Card>
@@ -270,7 +287,7 @@ export const CsvUpload = () => {
                   <X size={20} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-fg-primary tabular-nums">1</p>
+                  <p className="text-2xl font-bold text-fg-primary tabular-nums">{errCount}</p>
                   <p className="text-[10px] font-bold text-fg-tertiary uppercase tracking-widest">Errors</p>
                 </div>
               </Card>
@@ -287,11 +304,7 @@ export const CsvUpload = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-subtle">
-                    {[
-                      { row: 1, status: 'success', msg: 'Valid record' },
-                      { row: 2, status: 'warning', msg: 'Batch year might be incorrect' },
-                      { row: 3, status: 'danger', msg: 'USN already exists in database' },
-                    ].map(item => (
+                    {validationRows.map(item => (
                       <tr key={item.row} className="hover:bg-surface-raised/50">
                         <td className="px-6 py-4 text-sm font-mono text-fg-secondary">{item.row}</td>
                         <td className="px-6 py-4">
@@ -318,13 +331,14 @@ export const CsvUpload = () => {
                 <ChevronLeft size={18} />
                 Back to Mapping
               </Button>
-              <Button variant="primary" disabled={loading} onClick={handleExecuteImport}>
+              <Button variant="primary" disabled={loading || errCount > 0} onClick={handleExecuteImport}>
                 {loading ? <Loader2 className="animate-spin" size={18} /> : <Database size={18} />}
-                {loading ? 'Importing...' : 'Confirm & Import'}
+                {loading ? 'Importing...' : errCount > 0 ? 'Fix Errors First' : 'Confirm & Import'}
               </Button>
             </div>
           </div>
         );
+      }
 
       case 3:
         return (
