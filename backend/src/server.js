@@ -67,37 +67,44 @@ app.get('/api/db-status', async (_req, res) => {
 });
 
 
-app.post('/api/admin/clear-students', async (req, res) => {
-  console.log('CLEAR STUDENTS ENDPOINT CALLED');
-  try {
-    const students = await Student.find({}, { authUserId: 1 }).lean();
-    const linkedUserIds = students
-      .map((student) => student.authUserId)
-      .filter(Boolean);
+// POST /api/admin/purge-all
+// Wipes ALL seeded/demo data from the live database.
+// Protected by ADMIN_SECRET env variable — must match the header x-admin-secret.
+app.post('/api/admin/purge-all', async (req, res) => {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret || req.headers['x-admin-secret'] !== secret) {
+    return res.status(403).json({ error: 'Forbidden: invalid or missing admin secret' });
+  }
 
-    const [studentDeleteResult, linkedUsersDeleteResult, roleUsersDeleteResult] = await Promise.all([
+  console.log('PURGE-ALL ENDPOINT CALLED — wiping all collections...');
+  try {
+    const [
+      studentsResult,
+      studentUsersResult,
+      sessionsResult,
+      attendanceResult,
+      materialsResult,
+    ] = await Promise.all([
       Student.deleteMany({}),
-      linkedUserIds.length ? User.deleteMany({ _id: { $in: linkedUserIds } }) : Promise.resolve({ deletedCount: 0 }),
       User.deleteMany({ role: 'student' }),
+      Session.deleteMany({}),
+      Attendance.deleteMany({}),
+      Material.deleteMany({}),
     ]);
 
-    const usersDeleted = Math.max(
-      linkedUsersDeleteResult?.deletedCount || 0,
-      roleUsersDeleteResult?.deletedCount || 0
-    );
+    const summary = {
+      students:    studentsResult.deletedCount,
+      studentUsers: studentUsersResult.deletedCount,
+      sessions:    sessionsResult.deletedCount,
+      attendance:  attendanceResult.deletedCount,
+      materials:   materialsResult.deletedCount,
+    };
 
-    console.log(`Deleted ${studentDeleteResult.deletedCount} students and ${usersDeleted} student users`);
-    res.json({
-      ok: true,
-      message: `Deleted ${studentDeleteResult.deletedCount} students and ${usersDeleted} student users`,
-      deleted: {
-        students: studentDeleteResult.deletedCount,
-        users: usersDeleted,
-      },
-    });
+    console.log('PURGE-ALL complete:', summary);
+    return res.json({ ok: true, message: 'All seed/demo data purged from database', deleted: summary });
   } catch (error) {
-    console.error('CLEAR STUDENTS ERROR:', error);
-    res.status(500).json({ error: 'Clear failed', message: error.message });
+    console.error('PURGE-ALL ERROR:', error);
+    return res.status(500).json({ error: 'Purge failed', message: error.message });
   }
 });
 
