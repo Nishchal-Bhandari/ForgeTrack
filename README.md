@@ -39,7 +39,7 @@ ForgeTrack/
 │   │   ├── models/         # Mongoose Schemas (OOD)
 │   │   ├── routes/         # REST Endpoints
 │   │   └── server.js       # Entry point
-│   └── seed.sql            # Legacy migration scripts
+│   └── seed.sql            # DB schema & constraints (no seed data)
 ├── frontend/               # Presentation Layer (React/Vite)
 │   ├── src/
 │   │   ├── components/     # UI/UX Library (Atomic components)
@@ -86,7 +86,7 @@ Create mentor and student accounts from the mentor workflow or your admin toolin
 | Phase | Designation | Status | Objective |
 | :--- | :--- | :--- | :--- |
 | **P0** | **Foundation** | ✅ | Design Tokenization, Vite Scaffold, Atomic UI Baseline |
-| **P1** | **Persistence** | ✅ | Mongoose Modeling, Transactional Seeding, Data Integrity Logic |
+| **P1** | **Persistence** | ✅ | Mongoose Modeling, Data Integrity Logic, RLS Policies |
 | **P2** | **App Shell** | ✅ | Dynamic Routing, Navigation State, Role-Aware Controllers |
 | **P3** | **Mentor Core** | ✅ | Dashboard Analytics, Real-time Attendance, Material MRP |
 | **P4** | **AI Agent** | ⏳ | **Gemini heuristic mapping** for pivoted CSV ingestion |

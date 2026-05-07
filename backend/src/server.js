@@ -29,7 +29,7 @@ app.use((req, res, next) => {
 
 app.use(
   cors({
-    origin: true,  // Allow all origins temporarily for testing
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -66,17 +66,6 @@ app.get('/api/db-status', async (_req, res) => {
   });
 });
 
-import { seed } from './seed.js';
-
-app.use('/api/admin/seed', async (req, res) => {
-  try {
-    await seed();
-    res.json({ ok: true, message: 'Database seeded successfully' });
-  } catch (error) {
-    console.error('SEED ERROR:', error);
-    res.status(500).json({ error: 'Seed failed', message: error.message });
-  }
-});
 
 app.post('/api/admin/clear-students', async (req, res) => {
   console.log('CLEAR STUDENTS ENDPOINT CALLED');
