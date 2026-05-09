@@ -4,7 +4,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        /* Aurora Theme - Primary */
+        /* Cyber Ops Theme - Primary */
+        'cyber-bg': '#0A0A0A',
+        'cyber-surface': '#131313',
+        'cyber-card': '#1A1A1A',
+        'cyber-neon': '#00FF41',
+        'cyber-text': '#EAEAEA',
+        'cyber-text-secondary': '#8A8A8A',
+        'cyber-border': 'rgba(0, 255, 65, 0.15)',
+        
+        /* Aurora Theme - Primary (for backward compatibility) */
         'aurora-bg': '#0A0A0F',
         'aurora-surface': '#111118',
         'aurora-card': '#16161F',
@@ -14,45 +23,45 @@ export default {
         'aurora-text-secondary': '#8888AA',
         
         /* Legacy colors for compatibility */
-        void: '#0A0A0F',
-        canvas: '#111118',
+        void: '#0A0A0A',
+        canvas: '#131313',
         surface: {
-          DEFAULT: '#111118',
-          raised: '#16161F',
-          inset: '#0E0E14',
+          DEFAULT: '#131313',
+          raised: '#1A1A1A',
+          inset: '#0F0F0F',
         },
         fg: {
-          primary: '#F0F0FF',
-          secondary: '#8888AA',
-          tertiary: '#52525B',
+          primary: '#EAEAEA',
+          secondary: '#8A8A8A',
+          tertiary: '#525252',
         },
         accent: {
-          DEFAULT: '#6C63FF',
-          soft: 'rgba(108,99,255,0.15)',
+          DEFAULT: '#00FF41',
+          soft: 'rgba(0, 255, 65, 0.15)',
         },
         success: {
-          DEFAULT: '#10B981',
-          bg: 'rgba(16,185,129,0.12)',
-          border: 'rgba(16,185,129,0.25)',
+          DEFAULT: '#00FF41',
+          bg: 'rgba(0, 255, 65, 0.12)',
+          border: 'rgba(0, 255, 65, 0.25)',
         },
         danger: {
-          DEFAULT: '#F43F5E',
-          bg: 'rgba(244,63,94,0.12)',
-          border: 'rgba(244,63,94,0.25)',
+          DEFAULT: '#FF3B3B',
+          bg: 'rgba(255, 59, 59, 0.12)',
+          border: 'rgba(255, 59, 59, 0.25)',
         },
         warning: {
-          DEFAULT: '#F59E0B',
-          bg: 'rgba(245,158,11,0.12)',
-          border: 'rgba(245,158,11,0.25)',
+          DEFAULT: '#FFD700',
+          bg: 'rgba(255, 215, 0, 0.12)',
+          border: 'rgba(255, 215, 0, 0.25)',
         },
         info: {
-          DEFAULT: '#3B82F6',
-          bg: 'rgba(59,130,246,0.12)',
-          border: 'rgba(59,130,246,0.25)',
+          DEFAULT: '#00BFFF',
+          bg: 'rgba(0, 191, 255, 0.12)',
+          border: 'rgba(0, 191, 255, 0.25)',
         },
-        'border-subtle': 'rgba(255,255,255,0.06)',
-        'border-default': 'rgba(255,255,255,0.10)',
-        'border-strong': 'rgba(255,255,255,0.16)',
+        'border-subtle': 'rgba(0, 255, 65, 0.08)',
+        'border-default': 'rgba(0, 255, 65, 0.15)',
+        'border-strong': 'rgba(0, 255, 65, 0.25)',
       },
       fontFamily: {
         display: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
@@ -70,23 +79,49 @@ export default {
         full: '9999px',
       },
       backgroundImage: {
-        'cosmic-glow': 'radial-gradient(ellipse 600px 300px at 50% -60px, rgba(108,99,255,0.18), transparent 70%)',
-        'card-shine': 'linear-gradient(180deg, rgba(255,255,255,0.025) 0%, transparent 50%)',
-        'dot-grid': 'radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px)',
-        'aurora-glow': 'radial-gradient(ellipse 600px 300px at 50% -60px, rgba(108,99,255,0.25), transparent 70%)',
+        'cyber-glow': 'radial-gradient(ellipse 600px 300px at 50% -60px, rgba(0, 255, 65, 0.15), transparent 70%)',
+        'neon-pulse': 'linear-gradient(90deg, rgba(0, 255, 65, 0) 0%, rgba(0, 255, 65, 0.15) 50%, rgba(0, 255, 65, 0) 100%)',
+        'card-shine': 'linear-gradient(180deg, rgba(0, 255, 65, 0.05) 0%, transparent 50%)',
+        'dot-grid': 'radial-gradient(rgba(0, 255, 65, 0.08) 1px, transparent 1px)',
+        'cosmic-glow': 'radial-gradient(ellipse 600px 300px at 50% -60px, rgba(0, 255, 65, 0.2), transparent 70%)',
       },
       backgroundSize: {
         'dot-grid': '24px 24px',
       },
       boxShadow: {
-        'glow-accent': '0 0 20px rgba(108, 99, 255, 0.4)',
-        'glow-secondary': '0 0 20px rgba(0, 212, 170, 0.4)',
-        'card-hover': '0 20px 40px rgba(108, 99, 255, 0.12)',
-        'card-lift': '0 24px 48px rgba(0, 0, 0, 0.4)',
+        'neon-glow': '0 0 20px rgba(0, 255, 65, 0.5), 0 0 40px rgba(0, 255, 65, 0.25)',
+        'neon-glow-sm': '0 0 10px rgba(0, 255, 65, 0.4)',
+        'card-hover': '0 20px 40px rgba(0, 255, 65, 0.15)',
+        'card-lift': '0 24px 48px rgba(0, 0, 0, 0.6)',
+        'error-glow': '0 0 15px rgba(255, 59, 59, 0.4)',
       },
       transitionTimingFunction: {
         'spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
         'bounce-out': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+      },
+      animation: {
+        'pulse-neon': 'pulse-neon 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
+        'matrix-fall': 'matrix-fall 20s linear infinite',
+        'blink': 'blink 1s infinite',
+      },
+      keyframes: {
+        'pulse-neon': {
+          '0%, 100%': { opacity: '0.6' },
+          '50%': { opacity: '1' },
+        },
+        'glow-pulse': {
+          '0%, 100%': { boxShadow: '0 0 5px rgba(0, 255, 65, 0.4)' },
+          '50%': { boxShadow: '0 0 20px rgba(0, 255, 65, 0.6)' },
+        },
+        'matrix-fall': {
+          '0%': { transform: 'translateY(-100vh)' },
+          '100%': { transform: 'translateY(100vh)' },
+        },
+        'blink': {
+          '0%, 50%, 100%': { opacity: '1' },
+          '50.1%': { opacity: '0' },
+        },
       },
     },
   },

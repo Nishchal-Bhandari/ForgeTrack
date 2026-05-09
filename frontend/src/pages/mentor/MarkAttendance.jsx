@@ -1,35 +1,24 @@
-import { useState, useEffect } from 'react';
-import { 
-  Calendar as CalendarIcon, 
-  Search, 
-  CheckCircle, 
-  XCircle, 
-  Save, 
-  ChevronLeft, 
-  ChevronRight,
-  AlertCircle,
-  History,
-  Lock,
-  CircleCheck
-} from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   format, 
-  addDays, 
-  subDays, 
-  isBefore, 
-  isAfter, 
   startOfDay,
   startOfWeek,
   endOfWeek,
   eachDayOfInterval,
   isSameDay,
   addWeeks,
-  subWeeks
+  subWeeks,
+  isBefore,
+  isAfter,
 } from 'date-fns';
+import { ChevronLeft, ChevronRight, Lock, Search, Zap } from 'lucide-react';
 import Button from '../../components/ui/Button';
-import Card from '../../components/ui/Card';
+import { CyberCard } from '../../components/ui/CyberCard';
+import { CyberBackground } from '../../components/ui/CyberBackground';
+import { StatusBadge } from '../../components/ui/StatusBadge';
 import Avatar from '../../components/ui/Avatar';
 import { getSessionByDate, getSessionAttendance, saveAttendance } from '../../lib/api';
+import gsap from 'gsap';
 import toast from 'react-hot-toast';
 
 export default function MarkAttendance() {
@@ -42,6 +31,7 @@ export default function MarkAttendance() {
   const [topic, setTopic] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
+  const terminalRef = useRef(null);
 
   const today = startOfDay(new Date());
   const dateState = isAfter(selectedDate, today) ? 'future' : isBefore(selectedDate, today) ? 'past' : 'today';
@@ -153,249 +143,204 @@ export default function MarkAttendance() {
   const weekDays = eachDayOfInterval({ start: currentWeekStart, end: endOfWeek(currentWeekStart) });
 
   return (
-    <div className="space-y-6 pb-24 animate-fade-in max-w-5xl mx-auto">
-      <div className="mb-2">
-        <div className="text-[11px] font-bold text-fg-tertiary uppercase tracking-widest mb-1">Activity</div>
-        <h2 className="font-display text-2xl font-bold text-fg-primary mb-1">Mark Attendance</h2>
-        <p className="text-sm text-fg-secondary">Select a date — past sessions are read-only, today is editable, future dates are locked.</p>
-      </div>
-
-      {/* Visual Calendar Strip */}
-      <div className="bg-surface-raised border border-border-subtle rounded-2xl p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm font-bold text-fg-primary">
-            {format(currentWeekStart, 'MMMM yyyy')}
-          </span>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => setCurrentWeekStart(prev => subWeeks(prev, 1))}
-              className="w-8 h-8 flex items-center justify-center rounded-xl border border-border-subtle text-fg-secondary hover:text-fg-primary hover:bg-surface-inset transition-colors"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button 
-              onClick={() => {
-                setSelectedDate(today);
-                setCurrentWeekStart(startOfWeek(today));
-              }}
-              className="px-3 h-8 flex items-center justify-center rounded-xl border border-border-subtle text-xs font-bold text-fg-secondary hover:text-fg-primary hover:bg-surface-inset transition-colors"
-            >
-              Today
-            </button>
-            <button 
-              onClick={() => setCurrentWeekStart(prev => addWeeks(prev, 1))}
-              className="w-8 h-8 flex items-center justify-center rounded-xl border border-border-subtle text-fg-secondary hover:text-fg-primary hover:bg-surface-inset transition-colors"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-7 gap-2">
-          {weekDays.map(day => {
-            const isSelected = isSameDay(day, selectedDate);
-            const isDayToday = isSameDay(day, today);
-            const isDayFuture = isAfter(day, today);
-            const isDayPast = isBefore(day, today);
-            
-            return (
-              <div 
-                key={day.toISOString()}
-                onClick={() => !isDayFuture && setSelectedDate(day)}
-                className={`
-                  flex flex-col items-center gap-1.5 py-2 px-1 rounded-xl transition-all
-                  ${isDayFuture ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-surface-inset'}
-                  ${isSelected ? 'bg-surface-inset shadow-inner' : ''}
-                `}
-              >
-                <span className="text-[10px] font-bold text-fg-tertiary uppercase">
-                  {format(day, 'EEE')}
-                </span>
-                <div className={`
-                  w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold transition-colors
-                  ${isSelected ? 'bg-fg-primary text-bg-primary' : isDayToday ? 'bg-accent/20 text-accent' : 'text-fg-primary'}
-                `}>
-                  {format(day, 'd')}
-                </div>
-                <div className="w-1.5 h-1.5 rounded-full mt-1 flex items-center justify-center">
-                   {isDayFuture ? (
-                     <Lock size={8} className="text-fg-tertiary" />
-                   ) : isDayPast ? (
-                     // Since we don't fetch all month data, we can just show a neutral dot or history icon
-                     <History size={8} className="text-fg-tertiary" />
-                   ) : (
-                     <div className="w-1.5 h-1.5 rounded-full bg-success" />
-                   )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* State Banner */}
-      <div className={`
-        flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium
-        ${dateState === 'past' ? 'bg-surface-inset text-fg-secondary border-border-subtle' : ''}
-        ${dateState === 'today' ? 'bg-success/10 text-success border-success/20' : ''}
-        ${dateState === 'future' ? 'bg-danger/10 text-danger border-danger/20' : ''}
-      `}>
-        {dateState === 'past' && <><History size={18} /> Viewing past session — <strong>read-only</strong>. Changes are locked.</>}
-        {dateState === 'today' && <><CircleCheck size={18} /> Today's session — mark attendance freely.</>}
-        {dateState === 'future' && <><Lock size={18} /> Future date — attendance cannot be marked yet.</>}
-      </div>
-
-      {session ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-widest text-fg-tertiary">Session date</label>
-            <div className="bg-surface-raised border border-border-subtle rounded-xl px-4 py-2.5 text-sm font-medium text-fg-secondary flex items-center justify-between">
-              {format(selectedDate, 'dd MMM yyyy')}
-              <CalendarIcon size={16} className="text-fg-tertiary" />
-            </div>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-widest text-fg-tertiary">Session topic</label>
-            <input
-              className={`
-                bg-surface-raised border border-border-default rounded-xl px-4 py-2.5 text-sm font-medium focus:border-accent outline-none transition-all
-                ${isLocked ? 'text-fg-secondary bg-surface-inset cursor-not-allowed' : 'text-fg-primary'}
-              `}
-              value={topic}
-              onChange={(e) => {
-                if (isLocked) return;
-                setTopic(e.target.value);
-                setHasChanges(true);
-              }}
-              placeholder="e.g., Introduction to Circuits"
-              readOnly={isLocked}
-            />
-          </div>
-        </div>
-      ) : !loading && dateState !== 'future' ? (
-        <Card className="border-border-subtle text-center py-12">
-          <AlertCircle size={40} className="mx-auto text-fg-tertiary mb-4 opacity-40" />
-          <h4 className="text-lg font-bold text-fg-primary mb-2">No session was found for this date.</h4>
-          <p className="text-sm text-fg-tertiary max-w-sm mx-auto mb-6">
-            Sessions are typically created during CSV import or scheduled by administration. 
+    <>
+      <CyberBackground interactive={false} particleCount={200} />
+      
+      <div className="space-y-6 pb-24 animate-fade-in max-w-6xl mx-auto relative z-10">
+        {/* Header */}
+        <section>
+          <h2 className="font-mono text-4xl font-bold text-cyber-neon tracking-widest uppercase">
+            RFID SCANNER
+          </h2>
+          <p className="text-cyber-text-secondary text-sm font-mono mt-2">
+            {dateState === 'today' && '▸ LIVE - Ready for marking'}
+            {dateState === 'past' && '◄ ARCHIVED - View only'}
+            {dateState === 'future' && '⏳ LOCKED - Date not yet available'}
           </p>
-          {dateState !== 'today' && (
-            <Button variant="secondary" onClick={() => {
-              setSelectedDate(today);
-              setCurrentWeekStart(startOfWeek(today));
-            }}>
-              Go to Today
-            </Button>
-          )}
-        </Card>
-      ) : null}
+        </section>
 
-      {(session || dateState === 'future') && (
-        <Card className="!p-0 border-border-subtle overflow-hidden">
-          <div className="p-4 border-b border-border-subtle flex flex-col sm:flex-row items-center gap-4 bg-surface/30">
-            <div className="relative flex-1 w-full">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary" />
-              <input
-                className="w-full bg-surface-inset border border-border-default rounded-lg pl-10 pr-3 py-2 text-sm text-fg-primary focus:border-accent outline-none transition-all"
-                placeholder="Search students..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
+        {/* Calendar Strip */}
+        <CyberCard title="📅 DATE SELECTOR" animated={true} interactive={true}>
+          <div className="flex items-center justify-between mb-4">
+            <span className="font-mono text-sm text-cyber-neon uppercase tracking-widest">
+              {format(currentWeekStart, 'MMMM yyyy')}
+            </span>
+            <div className="flex gap-2">
               <button 
-                onClick={() => markAll(true)} 
-                disabled={isLocked}
-                className="px-3 py-2 rounded-lg border border-border-subtle text-xs font-bold text-fg-secondary hover:bg-surface-inset disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                onClick={() => setCurrentWeekStart(prev => subWeeks(prev, 1))}
+                className="w-8 h-8 flex items-center justify-center border border-cyber-border rounded hover:border-cyber-neon hover:bg-cyber-neon/10 transition-all"
               >
-                All Present
+                <ChevronLeft size={16} className="text-cyber-text-secondary" />
               </button>
               <button 
-                onClick={() => markAll(false)} 
-                disabled={isLocked}
-                className="px-3 py-2 rounded-lg border border-border-subtle text-xs font-bold text-fg-secondary hover:bg-surface-inset disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                onClick={() => {
+                  setSelectedDate(today);
+                  setCurrentWeekStart(startOfWeek(today));
+                }}
+                className="px-3 h-8 flex items-center justify-center border border-cyber-border rounded text-xs font-mono text-cyber-text-secondary hover:text-cyber-neon hover:border-cyber-neon transition-all uppercase"
               >
-                All Absent
+                Today
+              </button>
+              <button 
+                onClick={() => setCurrentWeekStart(prev => addWeeks(prev, 1))}
+                className="w-8 h-8 flex items-center justify-center border border-cyber-border rounded hover:border-cyber-neon hover:bg-cyber-neon/10 transition-all"
+              >
+                <ChevronRight size={16} className="text-cyber-text-secondary" />
               </button>
             </div>
-            {session && (
-              <div className="flex items-center gap-3 text-xs font-bold text-fg-secondary ml-auto whitespace-nowrap">
-                {presentCount}/{students.length}
-                <div className="w-16 h-1.5 bg-border-subtle rounded-full overflow-hidden">
-                  <div className="h-full bg-success transition-all duration-300" style={{ width: `${attendancePct}%` }} />
-                </div>
-              </div>
-            )}
           </div>
+          
+          <div className="grid grid-cols-7 gap-2">
+            {weekDays.map(day => {
+              const isSelected = isSameDay(day, selectedDate);
+              const isDayToday = isSameDay(day, today);
+              const isDayFuture = isAfter(day, today);
+              
+              return (
+                <button
+                  key={day.toISOString()}
+                  onClick={() => !isDayFuture && setSelectedDate(day)}
+                  disabled={isDayFuture}
+                  className={`
+                    flex flex-col items-center gap-1 py-2 px-1 rounded border transition-all font-mono
+                    ${isDayFuture ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+                    ${isSelected ? 'border-cyber-neon bg-cyber-neon/10' : 'border-cyber-border/30 hover:border-cyber-neon/50'}
+                  `}
+                >
+                  <span className="text-[10px] text-cyber-text-secondary uppercase">{format(day, 'EEE')}</span>
+                  <span className={`text-sm font-bold ${isSelected ? 'text-cyber-neon' : 'text-cyber-text'}`}>
+                    {format(day, 'd')}
+                  </span>
+                  {isDayToday && <div className="w-1 h-1 rounded-full bg-cyber-neon" />}
+                </button>
+              );
+            })}
+          </div>
+        </CyberCard>
 
-          {dateState === 'future' ? (
-            <div className="py-24 flex flex-col items-center justify-center text-fg-tertiary gap-3">
-              <Lock size={32} />
-              <span className="text-sm font-medium">Future date — not yet unlocked</span>
-            </div>
-          ) : (
-            <div className="max-h-[500px] overflow-y-auto custom-scrollbar divide-y divide-border-subtle">
-              {filteredStudents.map((student) => (
-                <div key={student.studentId} className="flex items-center p-4 hover:bg-surface-raised/30 transition-colors">
-                  <div className="mr-3">
-                     <Avatar name={student.fullName} size="sm" />
+        {session && (
+          <>
+            {/* Session Info */}
+            <CyberCard title="📍 SESSION INFO" animated={true}>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                  <p className="text-xs text-cyber-text-secondary font-mono uppercase mb-1">Date</p>
+                  <p className="font-mono text-cyber-text font-bold">{format(selectedDate, 'MMM dd')}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-cyber-text-secondary font-mono uppercase mb-1">Total</p>
+                  <p className="font-mono text-cyber-text font-bold text-lg">{students.length}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-cyber-text-secondary font-mono uppercase mb-1">Present</p>
+                  <p className="font-mono text-cyber-neon font-bold text-lg">{presentCount}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-cyber-text-secondary font-mono uppercase mb-1">Absent</p>
+                  <p className="font-mono text-warning-color font-bold text-lg">{absentCount}</p>
+                </div>
+              </div>
+              <div className="mt-4 p-2 bg-cyber-surface border border-cyber-border rounded text-center">
+                <p className="text-xs text-cyber-text-secondary font-mono mb-1">ATTENDANCE %</p>
+                <p className={`font-mono text-2xl font-bold ${attendancePct >= 80 ? 'text-cyber-neon' : attendancePct >= 60 ? 'text-warning-color' : 'text-danger-color'}`}>
+                  {attendancePct}%
+                </p>
+              </div>
+            </CyberCard>
+
+            {/* Search & Student List */}
+            <CyberCard className="!p-4">
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-cyber-neon/50" />
+                    <input
+                      type="text"
+                      placeholder="Scan USN or Name..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-cyber-surface border border-cyber-border rounded px-3 py-2 pl-10 text-sm text-cyber-text placeholder-cyber-text-secondary focus:border-cyber-neon focus:bg-cyber-card outline-none transition-all font-mono"
+                    />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-fg-primary truncate">{student.fullName}</div>
-                    <div className="text-xs font-mono text-fg-tertiary truncate">{student.usn}</div>
-                  </div>
-                  <button
-                    onClick={() => toggleAttendance(student.studentId)}
-                    disabled={isLocked}
-                    className={`
-                      px-4 py-1.5 rounded-full text-xs font-bold tracking-wider transition-all
-                      ${student.isPresent 
-                        ? 'bg-[#EAF3DE] text-[#3B6D11] dark:bg-success/20 dark:text-success' 
-                        : 'bg-[#FCEBEB] text-[#A32D2D] dark:bg-danger/20 dark:text-danger'}
-                      ${isLocked ? 'opacity-60 cursor-default' : 'hover:scale-105 cursor-pointer shadow-sm'}
-                    `}
+                  {!isLocked && (
+                    <div className="flex gap-2">
+                      <Button variant="secondary" size="sm" onClick={() => markAll(true)}>
+                        ALL ✓
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={() => markAll(false)}>
+                        ALL ✗
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Student List */}
+                <div className="max-h-96 overflow-y-auto border border-cyber-border rounded p-3 space-y-2">
+                  {filteredStudents.map((student) => (
+                    <div
+                      key={student.studentId}
+                      onClick={() => toggleAttendance(student.studentId)}
+                      className={`
+                        flex items-center gap-3 p-2 rounded border cursor-pointer transition-all font-mono text-sm
+                        ${student.isPresent 
+                          ? 'bg-cyber-neon/10 border-cyber-neon/40 text-cyber-neon' 
+                          : 'bg-cyber-surface border-cyber-border/30 text-cyber-text-secondary hover:border-cyber-text-secondary'
+                        }
+                      `}
+                    >
+                      <div className={`w-4 h-4 border-2 rounded flex items-center justify-center flex-shrink-0 ${
+                        student.isPresent ? 'bg-cyber-neon border-cyber-neon' : 'border-cyber-border'
+                      }`}>
+                        {student.isPresent && <span className="text-[10px] text-cyber-bg font-bold">✓</span>}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate font-bold">{student.fullName}</p>
+                        <p className="text-[10px] opacity-70 truncate">{student.usn}</p>
+                      </div>
+                      <span className="flex-shrink-0">
+                        {student.isPresent ? '✓' : '✗'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Save Button */}
+                {!isLocked && (
+                  <Button 
+                    variant="primary" 
+                    className="w-full" 
+                    onClick={handleSave}
+                    disabled={!hasChanges || saving}
                   >
-                    {student.isPresent ? 'PRESENT' : 'ABSENT'}
-                  </button>
-                </div>
-              ))}
-              {filteredStudents.length === 0 && (
-                <div className="p-8 text-center text-sm text-fg-tertiary">
-                  No students found matching your search.
-                </div>
-              )}
-            </div>
-          )}
-        </Card>
-      )}
+                    <Zap size={18} />
+                    {saving ? 'SAVING...' : 'SAVE ATTENDANCE'}
+                  </Button>
+                )}
 
-      {/* Bottom Footer Area */}
-      {session && (
-        <div className="flex items-center justify-between p-4 bg-surface-raised border border-border-subtle rounded-2xl shadow-sm mt-4">
-          {dateState === 'today' ? (
-            <>
-              <div className="text-xs font-medium text-fg-tertiary">
-                <span className="font-bold text-fg-primary">{presentCount}</span> of {students.length} marked present
+                {isLocked && (
+                  <div className="flex items-center gap-2 p-3 bg-danger-color/10 border border-danger-color/30 rounded text-danger-color text-sm font-mono">
+                    <Lock size={16} />
+                    {dateState === 'past' ? 'ARCHIVED - READ ONLY' : 'FUTURE DATE - LOCKED'}
+                  </div>
+                )}
               </div>
-              <Button variant="primary" size="sm" onClick={handleSave} loading={saving} disabled={!hasChanges}>
-                <Save size={16} className="mr-2" />
-                Save Attendance
+            </CyberCard>
+          </>
+        )}
+
+        {!session && dateState !== 'future' && !loading && (
+          <CyberCard title="⏳ NO SESSION" className="text-center py-8">
+            <p className="text-cyber-text-secondary font-mono mb-4">
+              ✗ No session found for {format(selectedDate, 'yyyy-MM-dd')}
+            </p>
+            {dateState === 'today' && (
+              <Button variant="primary" onClick={loadSession}>
+                CREATE SESSION
               </Button>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-2 text-xs font-medium text-warning">
-                <AlertCircle size={16} />
-                Read-only — contact admin to modify past records
-              </div>
-              <Button variant="secondary" size="sm" disabled>
-                <Lock size={16} className="mr-2" />
-                Locked
-              </Button>
-            </>
-          )}
-        </div>
-      )}
-    </div>
+            )}
+          </CyberCard>
+        )}
+      </div>
+    </>
   );
 }

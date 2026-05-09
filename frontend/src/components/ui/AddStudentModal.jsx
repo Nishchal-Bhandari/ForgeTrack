@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, AlertCircle, User, GraduationCap, ShieldCheck, Phone, Mail, Hash, BookOpen, Calendar as CalendarIcon } from 'lucide-react';
 import Button from './Button';
 import Input from './Input';
 import Modal from './Modal';
-import { addStudent } from '../../lib/api';
+import { addStudent, updateStudent } from '../../lib/api';
 import toast from 'react-hot-toast';
 
-export function AddStudentModal({ isOpen, onClose, onSuccess }) {
+export function AddStudentModal({ isOpen, onClose, onSuccess, initialData = null }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -20,6 +20,20 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }) {
     password: '',
     confirmPassword: '',
   });
+
+  useEffect(() => {
+    if (initialData && isOpen) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: initialData.fullName || prev.fullName,
+        usn: initialData.usn || prev.usn,
+        email: initialData.email || prev.email,
+        department: initialData.department || prev.department,
+        phone: initialData.phone || prev.phone,
+        batchYear: initialData.batchYear || prev.batchYear,
+      }));
+    }
+  }, [initialData, isOpen]);
 
   const departments = ['CS', 'AI', 'IS', 'ECE', 'ME', 'CE'];
 
@@ -66,10 +80,14 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }) {
         throw new Error('Invalid batch year format');
       }
 
-      await addStudent({
-        ...formData,
-        batchYear: parsedBatchYear,
-      });
+      if (initialData && initialData._id) {
+        // Update existing student
+        await updateStudent(initialData._id, { ...formData, batchYear: parsedBatchYear });
+        toast.success('Student updated successfully!');
+      } else {
+        await addStudent({ ...formData, batchYear: parsedBatchYear });
+        toast.success('Student enrolled successfully!');
+      }
 
       toast.success('Student enrolled successfully!');
       

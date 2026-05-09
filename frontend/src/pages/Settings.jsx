@@ -55,11 +55,11 @@ export const Settings = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Navigation */}
         <div className="space-y-2">
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-accent/10 text-accent border border-accent/20 font-medium">
+          <button onClick={() => document.getElementById('profile-section')?.scrollIntoView({ behavior: 'smooth' })} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-accent/10 text-accent border border-accent/20 font-medium">
             <User size={18} />
             Profile Settings
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-fg-secondary hover:bg-surface-raised transition-all font-medium">
+          <button onClick={() => document.getElementById('theme-section')?.scrollIntoView({ behavior: 'smooth' })} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-fg-secondary hover:bg-surface-raised transition-all font-medium">
             <Shield size={18} />
             Security
           </button>
@@ -68,7 +68,7 @@ export const Settings = () => {
         {/* Content */}
         <div className="md:col-span-2 space-y-6">
           {/* Profile Section */}
-          <Card>
+          <Card id="profile-section">
             <h3 className="text-lg font-bold text-fg-primary mb-6 flex items-center gap-2">
               <User size={20} className="text-accent" />
               Public Profile
@@ -132,7 +132,7 @@ export const Settings = () => {
           </Card>
 
           {/* Theme Section */}
-          <Card>
+          <Card id="theme-section">
             <h3 className="text-lg font-bold text-fg-primary mb-6 flex items-center gap-2">
               <Sun size={20} className="text-accent" />
               Appearance

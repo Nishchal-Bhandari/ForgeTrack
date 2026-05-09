@@ -8,7 +8,7 @@ const attendanceSchema = new mongoose.Schema(
     markedAt: { type: Date, default: Date.now },
     markedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     importLabel: { type: String, default: null, trim: true },
-    importId: { type: mongoose.Schema.Types.ObjectId, ref: 'ImportLog', default: null },
+    importBatchId: { type: mongoose.Schema.Types.ObjectId, ref: 'ImportBatch', default: null },
   },
   { timestamps: true }
 );

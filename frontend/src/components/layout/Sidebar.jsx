@@ -2,11 +2,10 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { 
-  Flame, 
+  Flame,
   LayoutDashboard, 
   ClipboardCheck, 
   Users, 
-  Upload, 
   BookOpen, 
   Settings as SettingsIcon, 
   LogOut,
@@ -14,7 +13,8 @@ import {
   BarChart2,
   Calendar,
   MessageSquare,
-  Bell
+  Bell,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Avatar from '../ui/Avatar';
@@ -33,7 +33,7 @@ export const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Mark Attendance', icon: ClipboardCheck, path: '/mentor/attendance' },
     { name: 'Manage Students', icon: Users, path: '/mentor/students' },
     { name: 'Student History', icon: BarChart2, path: '/mentor/students-history' },
-    { name: 'Upload CSV', icon: Upload, path: '/mentor/upload' },
+    { name: 'Bulk Import', icon: FileSpreadsheet, path: '/mentor/bulk-import' },
     { name: 'Materials', icon: BookOpen, path: '/mentor/materials' },
   ];
 

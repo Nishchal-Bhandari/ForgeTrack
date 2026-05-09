@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
   Clock, 
@@ -18,6 +19,7 @@ import { Loader2 } from 'lucide-react';
 
 export const StudentDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [studentData, setStudentData] = useState(null);
   const [stats, setStats] = useState(null);
   const [history, setHistory] = useState([]);
@@ -216,7 +218,7 @@ export const StudentDashboard = () => {
           <h3 className="text-[11px] font-bold uppercase tracking-[0.15em] text-fg-tertiary">
             Recent Sessions
           </h3>
-          <button className="text-[10px] font-bold text-accent hover:underline uppercase tracking-widest flex items-center gap-1">
+          <button type="button" onClick={() => navigate('/student/attendance')} className="text-[10px] font-bold text-accent hover:underline uppercase tracking-widest flex items-center gap-1">
             View Full History
             <ArrowRight size={12} />
           </button>

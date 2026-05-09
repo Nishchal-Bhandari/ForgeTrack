@@ -223,7 +223,9 @@ router.post('/notifications/read-all', requireAuth, ensureStudent, async (req, r
   }
 });
 
-// GET /api/student/heatmap - Get attendance heatmap data (30 days)
+// GET /api/student/heatmap - Get attendance heatmap data
+// Optional query: ?month=YYYY-MM to fetch that calendar month's heatmap
+// Otherwise returns last 30 days.
 router.get('/heatmap', requireAuth, ensureStudent, async (req, res) => {
   try {
     const student = await Student.findOne({ authUserId: req.auth.user._id });
@@ -233,28 +235,47 @@ router.get('/heatmap', requireAuth, ensureStudent, async (req, res) => {
     }
 
     const heatmap = {};
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-    
-    // Get last 30 days of attendance
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(today.getDate() - i);
-      d.setUTCHours(0, 0, 0, 0);
-      
-      const dateStr = d.toISOString().split('T')[0];
-      
-      const attendance = await Attendance.findOne({
-        studentId: student._id,
-        markedAt: {
-          $gte: d,
-          $lt: new Date(d.getTime() + 24 * 60 * 60 * 1000)
-        }
-      });
 
-      heatmap[dateStr] = attendance 
-        ? (attendance.status === 'present' ? 'present' : 'absent')
-        : 'none';
+    const monthParam = req.query.month; // YYYY-MM
+    if (monthParam) {
+      const [y, m] = monthParam.split('-').map(Number);
+      if (!y || !m) return res.status(400).json({ error: 'Invalid month parameter. Use YYYY-MM' });
+
+      const start = new Date(Date.UTC(y, m - 1, 1));
+      const end = new Date(Date.UTC(y, m, 1)); // exclusive
+
+      for (let d = new Date(start); d < end; d.setUTCDate(d.getUTCDate() + 1)) {
+        const day = new Date(d);
+        day.setUTCHours(0, 0, 0, 0);
+        const dateStr = day.toISOString().split('T')[0];
+
+        const session = await Session.findOne({ date: day });
+        if (session) {
+          const attendance = await Attendance.findOne({ studentId: student._id, sessionId: session._id });
+          heatmap[dateStr] = attendance ? (attendance.status === 'present' ? 'present' : 'absent') : 'none';
+        } else {
+          heatmap[dateStr] = 'none';
+        }
+      }
+    } else {
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      // Get last 30 days of attendance
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(today.getDate() - i);
+        d.setUTCHours(0, 0, 0, 0);
+
+        const dateStr = d.toISOString().split('T')[0];
+
+        const session = await Session.findOne({ date: d });
+        if (session) {
+          const attendance = await Attendance.findOne({ studentId: student._id, sessionId: session._id });
+          heatmap[dateStr] = attendance ? (attendance.status === 'present' ? 'present' : 'absent') : 'none';
+        } else {
+          heatmap[dateStr] = 'none';
+        }
+      }
     }
 
     return res.json({ heatmap });

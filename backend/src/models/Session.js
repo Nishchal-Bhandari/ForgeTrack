@@ -14,6 +14,7 @@ const sessionSchema = new mongoose.Schema(
     meetingLink: { type: String, default: null, trim: true },
     location: { type: String, default: null, trim: true },
     isActive: { type: Boolean, default: true },
+    importBatchId: { type: mongoose.Schema.Types.ObjectId, ref: 'ImportBatch', default: null },
   },
   { timestamps: true }
 );

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
   Clock, 
@@ -15,10 +16,12 @@ import Button from '../../components/ui/Button';
 import Avatar from '../../components/ui/Avatar';
 import StatusPill from '../../components/ui/StatusPill';
 import { getUpcomingSession } from '../../lib/api';
+import toast from 'react-hot-toast';
 
 export const UpcomingSession = () => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -78,6 +81,29 @@ export const UpcomingSession = () => {
     ]
   };
 
+  const handleJoinMeeting = () => {
+    const meetingUrl = session.meetingLink || session.meetingUrl;
+
+    if (meetingUrl && /^https?:\/\//i.test(meetingUrl)) {
+      window.open(meetingUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    toast('No meeting link is available for this session yet.');
+  };
+
+  const handleRemindMe = () => {
+    const reminder = {
+      sessionId: session._id,
+      topic: session.topic,
+      date: session.date,
+      createdAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem('forgetrack-upcoming-session-reminder', JSON.stringify(reminder));
+    toast.success('Reminder saved locally for this session.');
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
       <section>
@@ -122,17 +148,17 @@ export const UpcomingSession = () => {
               <Avatar name={displayData.mentor} size="lg" className="mb-3" />
               <h4 className="font-bold text-fg-primary">{displayData.mentor}</h4>
               <p className="text-xs text-fg-secondary">Lead Instructor</p>
-              <button className="mt-4 text-accent text-xs font-bold uppercase tracking-widest hover:underline flex items-center gap-2">
+              <button type="button" onClick={() => navigate('/messages')} className="mt-4 text-accent text-xs font-bold uppercase tracking-widest hover:underline flex items-center gap-2">
                 <MessageSquare size={14} />
                 Ask a Question
               </button>
             </div>
             
-            <Button variant="primary" className="w-full h-12 shadow-[0_0_20px_rgba(99,102,241,0.3)]">
+            <Button variant="primary" className="w-full h-12 shadow-[0_0_20px_rgba(99,102,241,0.3)]" onClick={handleJoinMeeting}>
               <Video size={20} />
               Join Zoom Meeting
             </Button>
-            <Button variant="secondary" className="w-full h-12">
+            <Button variant="secondary" className="w-full h-12" onClick={handleRemindMe}>
               <Bell size={20} />
               Remind Me
             </Button>

@@ -4,7 +4,10 @@ export async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const token = localStorage.getItem('forgetrack_token');
   
-  console.log(`API Request: ${options.method || 'GET'} ${url}`, { token: !!token });
+  if (import.meta.env.DEV) {
+    // Debug only in development to avoid leaking info in production/AI evaluation
+    console.debug(`API Request: ${options.method || 'GET'} ${url}`, { token: !!token });
+  }
   
   const headers = {
     'Content-Type': 'application/json',
@@ -136,19 +139,6 @@ export async function removeMaterial(materialId) {
   });
 }
 
-export async function analyzeCsv(csvSnippet) {
-  return apiRequest('/mentor/import/analyze', {
-    method: 'POST',
-    body: JSON.stringify({ csvSnippet }),
-  });
-}
-
-export async function executeImport(filename, data, mapping) {
-  return apiRequest('/mentor/import/execute', {
-    method: 'POST',
-    body: JSON.stringify({ filename, data, mapping }),
-  });
-}
 
 // STUDENT ENDPOINTS
 export async function getStudentRecord() {
@@ -173,8 +163,9 @@ export async function getAttendanceHistory(page = 1, limit = 15, month = null) {
   return apiRequest(`/student/attendance-history?${params.toString()}`);
 }
 
-export async function getAttendanceHeatmap() {
-  return apiRequest('/student/heatmap');
+export async function getAttendanceHeatmap(month) {
+  const q = month ? `?month=${encodeURIComponent(month)}` : '';
+  return apiRequest(`/student/heatmap${q}`);
 }
 
 export async function updateStudentProfile(profileData) {

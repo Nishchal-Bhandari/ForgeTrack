@@ -8,15 +8,16 @@ export const HeatmapGrid = ({ data = [], month, year, onMonthChange }) => {
 
   useEffect(() => {
     setVisibleCells(0);
+    // reveal more slowly so layout doesn't jump and animation is visible
     const interval = setInterval(() => {
       setVisibleCells((prev) => {
         if (prev >= data.length) {
           clearInterval(interval);
           return prev;
         }
-        return prev + 5; // Staggered reveal
+        return prev + 3;
       });
-    }, 10);
+    }, 20);
     return () => clearInterval(interval);
   }, [data]);
 
@@ -48,7 +49,7 @@ export const HeatmapGrid = ({ data = [], month, year, onMonthChange }) => {
 
       <div className="grid grid-cols-7 gap-2">
         {days.map((day) => (
-          <div key={day} className="h-7 flex items-center justify-center text-[10px] font-bold text-fg-tertiary uppercase">
+          <div key={day} className="flex items-center justify-center text-[10px] font-bold text-fg-tertiary uppercase w-6 h-6 sm:w-7 sm:h-7">
             {day}
           </div>
         ))}
@@ -60,14 +61,18 @@ export const HeatmapGrid = ({ data = [], month, year, onMonthChange }) => {
             absent: 'bg-danger/20 border border-danger/30',
             none: 'bg-surface-raised border border-border-subtle',
             future: 'bg-surface-inset border border-border-subtle opacity-30',
+            pad: 'bg-transparent border-transparent',
           };
+
+          const title = day.status && day.status !== 'pad' ? `${day.date}: ${day.status}` : undefined;
 
           return (
             <div
-              key={day.date}
-              title={`${day.date}: ${day.status}`}
+              key={day.date || idx}
+              title={title}
+              aria-hidden={day.status === 'pad' ? 'true' : 'false'}
               className={clsx(
-                'w-full aspect-square rounded-sm transition-all duration-500 transform',
+                'rounded-sm transition-all duration-300 transform w-6 h-6 sm:w-7 sm:h-7',
                 statusStyles[day.status] || statusStyles.none,
                 isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
               )}

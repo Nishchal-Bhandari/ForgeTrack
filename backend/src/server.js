@@ -12,6 +12,7 @@ import mentorRouter from './routes/mentor.js';
 import studentRouter from './routes/student.js';
 import messagesRouter from './routes/messages.js';
 import announcementsRouter from './routes/announcements.js';
+import attendanceImportRouter from './routes/attendanceImport.js';
 
 dotenv.config();
 
@@ -110,6 +111,8 @@ app.post('/api/admin/purge-all', async (req, res) => {
 
 app.use('/api/auth', authRouter);
 console.log('Auth router registered');
+app.use('/api/mentor/attendance-import', attendanceImportRouter);
+console.log('Attendance Import router registered');
 app.use('/api/mentor', mentorRouter);
 console.log('Mentor router registered');
 app.use('/api/student', studentRouter);
@@ -118,6 +121,7 @@ app.use('/api/messages', messagesRouter);
 console.log('Messages router registered');
 app.use('/api/announcements', announcementsRouter);
 console.log('Announcements router registered');
+
 
 console.log('All routes registered');
 

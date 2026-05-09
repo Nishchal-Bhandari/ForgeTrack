@@ -7,7 +7,7 @@ import MentorDashboard from './pages/mentor/MentorDashboard';
 import MarkAttendance from './pages/mentor/MarkAttendance';
 import StudentHistory from './pages/mentor/StudentHistory';
 import { ManageStudents } from './pages/mentor/ManageStudents';
-import CsvUpload from './pages/mentor/CsvUpload';
+import BulkAttendanceImport from './pages/mentor/BulkAttendanceImport';
 import MaterialsLibrary from './pages/mentor/MaterialsLibrary';
 import StudentDashboard from './pages/student/StudentDashboard';
 import StudentAttendance from './pages/student/StudentAttendance';
@@ -46,7 +46,6 @@ function AppRoutes() {
       <Route path="/attendance" element={<RedirectByRole />} />
       <Route path="/history" element={<RedirectByRole />} />
       <Route path="/materials" element={<RedirectByRole />} />
-      <Route path="/upload" element={<RedirectByRole />} />
       
       <Route element={<RoleGuard><AppShell /></RoleGuard>}>
         <Route path="/settings" element={<RouteFade><Settings /></RouteFade>} />
@@ -59,7 +58,7 @@ function AppRoutes() {
         <Route path="/mentor/attendance" element={<RoleGuard role="mentor"><RouteFade><MarkAttendance /></RouteFade></RoleGuard>} />
         <Route path="/mentor/students" element={<RoleGuard role="mentor"><RouteFade><ManageStudents /></RouteFade></RoleGuard>} />
         <Route path="/mentor/students-history" element={<RoleGuard role="mentor"><RouteFade><StudentHistory /></RouteFade></RoleGuard>} />
-        <Route path="/mentor/upload" element={<RoleGuard role="mentor"><RouteFade><CsvUpload /></RouteFade></RoleGuard>} />
+        <Route path="/mentor/bulk-import" element={<RoleGuard role="mentor"><RouteFade><BulkAttendanceImport /></RouteFade></RoleGuard>} />
         <Route path="/mentor/materials" element={<RoleGuard role="mentor"><RouteFade><MaterialsLibrary role="mentor" /></RouteFade></RoleGuard>} />
         
         {/* Student Routes */}

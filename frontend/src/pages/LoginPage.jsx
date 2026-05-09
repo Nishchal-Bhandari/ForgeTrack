@@ -118,7 +118,7 @@ export const LoginPage = () => {
               />
               {role === 'mentor' && (
                 <div className="text-right">
-                  <button type="button" className="text-xs hover:underline" style={{ color: 'var(--accent-primary)' }}>
+                  <button type="button" onClick={() => navigate('/change-password')} className="text-xs hover:underline" style={{ color: 'var(--accent-primary)' }}>
                     Forgot password?
                   </button>
                 </div>

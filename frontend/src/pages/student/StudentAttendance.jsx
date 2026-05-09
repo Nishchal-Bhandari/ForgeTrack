@@ -15,30 +15,50 @@ export const StudentAttendance = () => {
   const [heatmap, setHeatmap] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [displayMonth, setDisplayMonth] = useState(new Date());
+  const [heatmapLoading, setHeatmapLoading] = useState(true);
+
+  const handleExportHistory = () => {
+    if (!history.length) {
+      toast('No attendance history is available to export.');
+      return;
+    }
+
+    const rows = [
+      ['Date', 'Topic', 'Mentor', 'Status', 'Duration'],
+      ...history.map((session) => [
+        new Date(session.date).toLocaleDateString(),
+        session.topic || '',
+        session.mentorName || 'Mentor',
+        session.status || '',
+        session.duration || '',
+      ]),
+    ];
+
+    const csv = rows
+      .map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'forgetrack-attendance-history.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Attendance history exported.');
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchMeta = async () => {
       try {
-        const [statsRes, historyRes, heatmapRes] = await Promise.all([
+        const [statsRes, historyRes] = await Promise.all([
           getAttendanceStats(),
           getAttendanceHistory(1, 50),
-          getAttendanceHeatmap(),
         ]);
 
         setStats(statsRes.stats);
         setHistory(historyRes.history);
-
-        const hData = [];
-        const today = new Date();
-        for (let i = 29; i >= 0; i--) {
-          const d = new Date();
-          d.setDate(today.getDate() - i);
-          const dateStr = d.toISOString().split('T')[0];
-          hData.push({
-            date: dateStr,
-            status: heatmapRes.heatmap[dateStr] || 'none'
-          });
-        }
-        setHeatmap(hData);
       } catch (err) {
         toast.error('Failed to load attendance records');
         console.error(err);
@@ -46,8 +66,43 @@ export const StudentAttendance = () => {
         setLoading(false);
       }
     };
-    fetchData();
+    fetchMeta();
   }, []);
+
+  useEffect(() => {
+    const fetchHeatmapForMonth = async (date) => {
+      setHeatmapLoading(true);
+      try {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const monthParam = `${y}-${m}`;
+        const heatmapRes = await getAttendanceHeatmap(monthParam);
+
+        const year = date.getFullYear();
+        const monthIndex = date.getMonth();
+        const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+        const firstWeekday = new Date(year, monthIndex, 1).getDay(); // 0=Sun
+        const weekdayMondayFirst = (firstWeekday + 6) % 7; // 0=Mon
+
+        const arr = [];
+        for (let i = 0; i < weekdayMondayFirst; i++) arr.push({ status: 'pad' });
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dt = new Date(Date.UTC(year, monthIndex, d));
+          const dateStr = dt.toISOString().split('T')[0];
+          arr.push({ date: dateStr, status: heatmapRes.heatmap[dateStr] || 'none' });
+        }
+
+        setHeatmap(arr);
+      } catch (err) {
+        console.error('Failed to load heatmap', err);
+        toast.error('Failed to load attendance heatmap');
+      } finally {
+        setHeatmapLoading(false);
+      }
+    };
+
+    fetchHeatmapForMonth(displayMonth);
+  }, [displayMonth]);
 
   if (loading) {
     return (
@@ -64,7 +119,7 @@ export const StudentAttendance = () => {
           <h2 className="font-display text-3xl font-bold text-fg-primary">My Attendance</h2>
           <p className="text-fg-secondary text-sm mt-1">Review your session attendance records and patterns.</p>
         </div>
-        <Button variant="secondary" size="sm">
+        <Button variant="secondary" size="sm" onClick={handleExportHistory}>
           <Download size={16} />
           Export History
         </Button>
@@ -93,11 +148,15 @@ export const StudentAttendance = () => {
         </Card>
 
         <Card className="lg:col-span-8">
-          <HeatmapGrid 
-            data={heatmap} 
-            month={new Date().toLocaleString('default', { month: 'long' })} 
-            year={new Date().getFullYear().toString()}
-            onMonthChange={() => {}}
+          <HeatmapGrid
+            data={heatmap}
+            month={displayMonth.toLocaleString('default', { month: 'long' })}
+            year={displayMonth.getFullYear().toString()}
+            onMonthChange={(delta) => {
+              const d = new Date(displayMonth);
+              d.setMonth(d.getMonth() + delta);
+              setDisplayMonth(d);
+            }}
           />
         </Card>
       </div>

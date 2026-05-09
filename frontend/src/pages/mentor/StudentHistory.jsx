@@ -70,6 +70,37 @@ export const StudentHistory = () => {
 
   const history = analytics?.history || [];
 
+  const handleExportCsv = () => {
+    if (!history.length) {
+      toast('No attendance history is available to export.');
+      return;
+    }
+
+    const rows = [
+      ['Date', 'Topic', 'Status', 'Duration', 'Notes'],
+      ...history.map((row) => [
+        new Date(row.date).toLocaleDateString(),
+        row.topic || '',
+        row.status || '',
+        row.duration || '',
+        row.notes || '-',
+      ]),
+    ];
+
+    const csv = rows
+      .map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${selectedStudent?.usn || 'student'}-attendance-history.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Student history exported.');
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       <section>
@@ -209,7 +240,7 @@ export const StudentHistory = () => {
               <h3 className="text-[11px] font-medium uppercase tracking-[0.15em] text-fg-tertiary">
                 Detailed Attendance Log
               </h3>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={handleExportCsv}>
                 <Download size={16} />
                 Export CSV
               </Button>
