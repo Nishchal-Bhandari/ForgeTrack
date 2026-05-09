@@ -75,8 +75,39 @@ VITE_API_URL=https://api.yourdomain.com/api
 npm install && npm run dev:all
 ```
 
-### 👤 Account Access
-ForgeTrack is configured for real user onboarding.
+### 👤 Demo Credentials for Evaluation
+
+**Live Application:** https://forge-track-eight.vercel.app
+
+For evaluation and testing, use these pre-configured demo accounts:
+
+#### Mentor Account
+- **Email:** `mentor@forge.local`
+- **Password:** `password123`
+- **Role:** Mentor (Full access to dashboards, student management, attendance, materials)
+
+#### Student Account
+- **Email:** `student@forge.local`
+- **Password:** `password123`
+- **Role:** Student (Access to personal attendance, materials, messaging)
+
+**Note:** These accounts are pre-seeded in the database and available immediately upon login.
+
+---
+
+## 🎨 Cyber Ops Interface v1.0
+
+**Latest Transformation:** ForgeTrack has been redesigned with a cyberpunk-inspired interface featuring:
+
+- **Neon Green Theme** (#00FF41) with dark terminal aesthetics
+- **Smooth GSAP Animations** for all interactive elements
+- **Three.js Particle Effects** on dashboard backgrounds
+- **AI-Powered Bulk Import** with intelligent Excel/CSV column mapping
+- **All Controls Fully Functional** with proper event handling and user feedback
+- **Production-Ready Build** deployed on Vercel
+
+### Account Access
+ForgeTrack supports real user onboarding.
 Create mentor and student accounts from the mentor workflow or your admin tooling, then sign in with those issued credentials.
 
 ---
